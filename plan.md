@@ -1,197 +1,285 @@
-# Project Artha — Detailed Project Plan
+# Project Artha — Plan
 
 > *Artha* — wealth pursued through sound, disciplined means.
-> **Primary deliverable: hands-on learning** of Microsoft Foundry Agent Service + GitHub Copilot agentic features.
-> **Secondary deliverable: an honest research/decision-support tool** for NSE/BSE equity investing — *not* a return-prediction machine.
+
+**What this is:** a long-horizon investing practice, run manually first, with a small amount of supporting software — plus a deliberate learning vehicle for agentic tooling.
+
+**What this is not:** a mechanism that will reliably produce 20% CAGR. An earlier draft of this plan claimed it could. That claim did not survive its own arithmetic (§1), and this version corrects it.
+
+**Sequence, deliberately:** personal finances → honest numbers → manual process → evidence → software → capital. Each step earns the next.
 
 ---
 
-## 0. Problem statement & guiding philosophy
+## 0. Personal investment policy (do this before anything else)
 
-Build a multi-agent research/decision-support system for Indian equities that makes the operator a more disciplined, better-informed investor. The system's job is **better research, better risk control, and an honest track record** — explicitly **not** a promised CAGR or a stock-picking oracle.
+None of the discipline in this plan survives a forced sale. The commonest way a good long-horizon strategy dies is not a bad thesis — it is needing the money during a bear market. **Write this down before the first stock purchase:**
 
-**Weighting is deliberate:** when learning depth and product features conflict, *learning wins*. Every phase has a learning checkpoint that is a first-class deliverable, not a side effect.
+- **Emergency fund:** 6–12 months of expenses in liquid funds or an FD. Untouchable, not counted as investable assets.
+- **Insurance:** term life (if anyone depends on your income) and health cover independent of your employer's.
+- **High-cost debt:** cleared. No equity strategy reliably beats the interest on unsecured debt.
+- **Known obligations within 5 years** (property, education, family): funded in debt instruments, not equity. Ever.
+- **Job-loss correlation — the one most people miss:** your income is in Indian tech; Indian equities fall when Indian tech hiring freezes. Your human capital and your portfolio are correlated, so both can fail at once. The emergency fund is sized for that scenario specifically.
+- **Investable assets** = what remains after all of the above. **Only this is in scope**, and within it, only money with a genuine 7+ year horizon.
 
-### Honesty guardrails baked into the whole project
-- **No live capital** without a separate, explicit go-ahead. Default mode = research / backtest / paper.
-- **Overfitting is the default suspicion.** Out-of-sample + walk-forward validation is mandatory; smooth equity curves, narrow-window parameter tuning, and cost-free backtests are treated as *red flags, not results*.
-- **Benchmark-relative success only.** Everything is measured against Nifty 50 (or the relevant index) and a naive buy-and-hold baseline — never against an absolute return target.
-- **Legitimate data only.** Official broker APIs, licensed vendors, or public regulatory filings. No ToS-violating scraping.
-- **Every agent decision + rationale is logged** via Foundry observability/memory for honest post-mortems.
-
-### Confirmed decisions
-- **Language/stack:** Python (Foundry Python SDK + pandas / vectorbt / backtrader).
-- **Primary data source:** Zerodha **Kite Connect** for price/OHLCV/order data, behind a broker-agnostic adapter. Deep fundamentals + full-text filings fall back to a licensed vendor (e.g. GFDL) or official NSE/BSE disclosure feeds.
+**Exit gate for the whole project:** this document exists in writing before Phase 1.
 
 ---
 
-## 1. Research summary A — Microsoft Foundry Agent Service (as available today)
+## 1. The honest numbers
 
-*Sourced from Microsoft Learn, Foundry devblogs, and Ignite 2025 coverage. Treat exact feature names/GA status as fast-moving — re-verify at build time.*
+### 1.1 Tax makes the gross target higher than it looks
 
-| Capability | What's available | How Artha uses it |
+| | Gross CAGR | Post-tax CAGR (LTCG 12.5% on exit) |
 |---|---|---|
-| **Multi-agent orchestration** | Foundry Agent Service (GA) supports connected/multi-agent workflows: LLM-driven dynamic orchestration **and** deterministic YAML/visual workflow orchestration (auditable, step-by-step). Interop with Semantic Kernel, AutoGen, LangGraph. | Use **deterministic workflow orchestration** for the core pipeline (ingest → screen → research → backtest → risk → report) so runs are auditable; reserve LLM-driven delegation for the research/grounding agent. |
-| **Foundry IQ grounding** | Enterprise retrieval/RAG layer with multi-source grounding (Bing, documents/SharePoint/Fabric), citations, document-level security. | Research/grounding agent summarizes news + filings **with citations** and explicit confidence flags. |
-| **MCP tool connections** | MCP tool catalog + ability to expose any REST API / function as an MCP tool; large Logic Apps connector library. | Wrap Kite Connect, the backtester, and NSE/BSE filing feeds as MCP tools the agents call. |
-| **Memory** | Persistent, session-aware, cross-agent memory for stateful multi-turn/multi-session tasks. | Persist watchlist state, decision logs, and prior research so post-mortems are reconstructable. |
-| **Evaluation & observability** | End-to-end tracing of agent/tool/workflow steps; native Application Insights integration; built-in agent evaluation tooling. | Trace every decision + rationale; run agent evals on the research and screener agents. |
-| **Security/governance** | Entra ID, RBAC, content filtering, VNet isolation, central control plane, model router. | Keep API keys/secrets in Key Vault; least-privilege RBAC; never embed broker credentials in agent prompts. |
+| Nifty 50 TR, historical | ~12–13% | ~11.7% |
+| To *net* 20% | **~22%** | 20% |
 
-**Learning implication:** Artha is a near-ideal Foundry teaching vehicle because it naturally exercises *all six* pillars (orchestration, grounding, tools/MCP, memory, evaluation, governance).
+20% gross over 5 years is 2.49x; after 12.5% LTCG on the gain, 2.30x — **18.15% net**. Netting 20% needs ~22% gross. *(Rates changed in the July 2024 budget — verify before relying on them.)*
+
+### 1.2 The arithmetic that kills 20% as a portfolio target
+
+An earlier draft claimed a 20–25% ballast made a 20% target compatible with moderate risk, needing only ~23% from the active sleeve. That was wrong twice: it ignored tax, and it modelled "ballast" earning 12% — equity-like returns from the sleeve whose entire job is to *not* behave like equity. Ballast realistically earns 8–9%.
+
+Corrected, and with the active sleeve sized safely at 15–20% of investable assets:
+
+| Active sleeve at… | …to hit 20% net overall, it must return |
+|---|---|
+| 60% of assets | ~30% |
+| 20% of assets | ~57% |
+| 17.5% of assets | ~64% |
+
+**Nobody sustains 57%. So 20% at the portfolio level is not a target — it is arithmetic fiction at any safe allocation.** Stating that plainly is the single most useful thing in this document.
+
+### 1.3 What a safely-sized active sleeve actually does
+
+82.5% passive at 13% gross, 17.5% active, over 5 years, per ₹100:
+
+| Active sleeve returns | Portfolio gross | ₹100 becomes (post-tax) | vs all-passive |
+|---|---|---|---|
+| 25% (excellent) | ~15.1% | ₹189 | **+9%** |
+| 13% (no edge) | 13% | ₹174 | 0% |
+| 0% (bad) | ~10.7% | ₹158 | **−9%** |
+
+**An elite five years adds ~9% to terminal wealth. A bad five years costs ~9%.** That near-symmetry is the real, unexciting shape of this decision — and it is why the sleeve must stay small: the downside is survivable, and the upside was never going to be life-changing in five years anyway.
+
+### 1.4 So why do it at all?
+
+Three honest reasons — none of which is "get rich by 2031":
+
+1. **Decades, not years.** The same 2-point edge over 25 years turns 15.8x into 24.8x — **~57% more terminal wealth**. The payoff is real but back-loaded, and only exists if the skill is real and the allocation grows with evidence.
+2. **The allocation can grow.** Starting at 17.5% is not a ceiling. With a decade of genuine evidence it can rise. Starting *large* without evidence is how people lose the chance to ever find out.
+3. **The learning is a first-class deliverable.** Agentic tooling, data engineering, and the investing discipline itself have value independent of returns. This is the reason the project is justified even if the sleeve is eventually shut down.
+
+### 1.5 Probability, stated up front
+
+Based on SPIVA India (**84–94% of active large-cap funds underperform over 5 years**) and Barber–Odean (**~10% of individuals beat the market long-run**) — those funds being full-time teams with analysts and management access:
+
+- **P(sleeve beats its benchmark over 5 years): ~15–25%.**
+- **P(sustaining the workload for 5 years, part-time): ~30–40%** — probably the binding constraint, and the most underrated risk here.
+- **P(learning something durable and not losing serious money): high**, and that is what the structure is designed to guarantee.
+
+Anyone who quotes you a higher number is selling something.
 
 ---
 
-## 2. Research summary B — GitHub Copilot agentic features (as available today)
+## 2. The benchmark, frozen now
 
-**Primary tool: the GitHub Copilot app** (the agentic Copilot experience with Plan mode, sessions, custom agents, skills, and multi-file agentic edits), not just the VS Code inline assistant. The same agentic features surface across the app, VS Code, and Copilot CLI.
+Ambiguity here lets honest people benchmark-hop after the fact. So it is fixed **before the first purchase** and never changed:
 
-| Feature | What it is | How Artha uses it (learning target) |
+- **Policy benchmark:** a named Nifty 50 TR index fund and one named factor fund (Momentum 30 or Quality 30), fixed weights, chosen and written down at Phase 1. Specific schemes, recorded by name.
+- **Measurement:** time-weighted returns for skill (removes the effect of *when* you added money); money-weighted for actual wealth. Both reported.
+- **Post-tax:** including accrued liability on unrealised gains, so a large unrealised winner can't flatter the record.
+- **The clock starts** at the first purchase in the active sleeve.
+- **Judged versus each benchmark independently.** Beating one and losing to another is a loss.
+
+---
+
+## 3. Philosophy → mechanism
+
+Each source contributes one concrete practice, not an inspirational quote.
+
+| Source | Mechanism |
+|---|---|
+| **Buffett** | Circle of competence as a **hard written filter**. Owner earnings, not EPS. Buy quality at a fair price; hold for years. |
+| **Munger** | **Inversion**: a written pre-mortem before every buy. Sit on your hands — the default action is *nothing*. |
+| **Pabrai** | Few bets, big bets, infrequent bets. **Fatal-flaw checklist** (§5.3). "Heads I win, tails I don't lose much." |
+| **Marks** | **Risk is permanent loss, not volatility.** Second-level thinking: what does the price already assume? |
+| **Dalio** | Rules written down in advance, when calm. Genuine diversification. Radical honesty in review. |
+| **Kotegawa** | *Excluded.* Intraday tape-reading in 2000s Japan is not replicable and contradicts everything above. Only the transferable idea survives: **forced selling creates opportunity** — which requires patience and cash, not reflexes. |
+
+**Deliberately dropped from earlier drafts:** the *cycle dashboard / aggressiveness dial*. It was market timing with a Marks label attached. Unvalidated, it more likely produces cash drag than alpha. Cash is now set by a static range (§6), not by a model.
+
+---
+
+## 4. Tools
+
+| Tool | What it is | Role |
 |---|---|---|
-| **Agent mode / sessions** | Autonomous multi-step, multi-file execution: plans, edits many files, runs tests/builds, self-corrects in a plan→execute→validate loop; each task runs as its own session. | Primary coding driver for scaffolding agents, tools, and the backtester; one session per phase workstream. |
-| **Plan mode** | Copilot proposes a reviewable plan (like this one) before executing, and persists a `plan.md`. | Use for every non-trivial change; practice reviewing/approving/redirecting plans. |
-| **Custom agents** | Markdown + YAML frontmatter (`.github/agents/`) defining a persona, allowed tools, behavior. | Author a `quant-reviewer` agent (overfitting police) and a `compliance-reviewer` agent (SEBI / data-ToS checks). |
-| **Custom instructions** | Always-on repo rules in `.github/copilot-instructions.md` or scoped `*.instructions.md`. | Encode honesty guardrails (no live capital, cost-aware backtests, benchmark-relative language) so Copilot itself resists overconfidence. |
-| **Skills** | Portable instruction+script folders (`.github/skills/`, `~/.copilot/skills/`) auto-loaded for repeatable workflows. | A `walk-forward-backtest` skill and a `filing-summary` skill for reusable multi-step routines. |
+| **Zerodha Kite** | Broker; the only programmable API here (Kite Connect). | Execution + price data. Orders placed **manually in the UI** — at 3–6 trades a year, automating this is negative value and pure risk. |
+| **Tickertape** | Research/screening UI. No public API. | Primary research surface. Manual, and that is fine. |
+| **INDmoney** | Aggregation, US equities, gold. No fundamentals API. | Ballast, global diversification, whole-portfolio visibility. |
+| **Waya** | Paid SEBI-registered advisory (tips). | **Leads only, on probation** — see below. |
 
-**Learning implication:** the project intentionally uses Copilot to *build the thing that enforces discipline*, and encodes that discipline into Copilot's own config.
-
-### 2.1 Token optimization & "caveman" prompting (explicit practice)
-
-Working the GitHub Copilot app effectively over a long project means **treating tokens/context as a scarce, paid resource** — a first-class skill to build, not an afterthought.
-
-- **Caveman prompting:** grammatically sparse, keyword-dense instructions — drop articles/filler, use shorthand and imperatives (e.g. *"screener agent: add ROE-trend check, log rationale, no strategy logic"* instead of a polite paragraph). Reserve prose for genuinely ambiguous design decisions.
-- **Context hygiene:** short inspect→act→verify loops; scope reads with `view_range`/grep instead of dumping whole files; one session per workstream so unrelated context doesn't accumulate; start a fresh session when a thread is done rather than letting one balloon.
-- **Push detail into config, not chat:** durable rules live in `copilot-instructions.md`, skills, and custom agents — so they're applied without being re-typed (and re-tokenized) every turn.
-- **Delegate verbose work:** use sub-agents/background tasks for noisy builds/tests so only the summary returns to the main context.
-- **Measure it:** track token/turn cost per phase as a discipline metric, the same way the tool tracks trading discipline.
-
-**Learning checkpoint (cross-cutting):** be able to show a measurable drop in tokens-per-completed-task across phases from applying caveman prompting + context hygiene, with no loss of output quality.
+**Waya rule:** a call may add a name to the research queue; it may never cause a purchase. F&O and commodity calls are out of scope entirely. Every call is logged with date/entry/target and scored against Nifty at 1/3/12 months. **After 12 months, cancel or keep based on that record.** Note the real risk is anchoring — a tip contaminates independent research even when formally treated as a "lead", so log your own view *before* reading theirs.
 
 ---
 
-## 3. Research summary C — Legitimate Indian data sources
+## 5. The research process (manual first)
 
-| Source | Data | Licensing / fit |
+**Nothing in this section requires software.** A spreadsheet and a text file are sufficient, and that is how it starts.
+
+### 5.1 Circle of competence
+Written list of industries you can genuinely evaluate. Everything else is excluded — not deprioritised, excluded. For a software professional this plausibly includes IT services, SaaS, platforms, and consumer businesses you use. It plausibly excludes banks/NBFCs (leveraged black boxes), pharma (regulatory binary outcomes), and commodities.
+
+### 5.2 Quality screen
+Durable ROCE; free cash flow that reconciles with reported profit; low and falling debt; earnings consistency across a cycle; sane accruals; promoter behaviour and pledging; auditor stability; dividends consistent with stated profits.
+
+### 5.3 Fatal-flaw checklist — short, not 100 points
+An earlier draft specified a 100-point scored checklist. That was false precision: it invites check-box answers to unknowable questions and creates a score that feels like evidence. Replaced with **~15 disqualifying questions**, each a hard block, not a score:
+
+- Is the cash flow real, or does profit never become cash?
+- Is the promoter honest — pledging, related-party transactions, auditor exits?
+- Can this business survive its worst historical year without dilution?
+- Is there a single customer, regulator, or input that can end it?
+- Do I understand how it makes money well enough to explain it in five sentences?
+- What is the price already assuming, and is that plausible?
+
+**Any "no" or "unknown" ends the analysis.** No overriding.
+
+### 5.4 Thesis and pre-mortem
+One page, written before purchase: the 3 things that must be true; what would prove me wrong; the monitoring triggers; bear/base/bull valuation; buy-below price; maximum tolerable loss. Then the pre-mortem: *it is three years on and this lost 60% — what happened?* Both stored permanently and re-read at every review.
+
+### 5.5 Patience
+The buy-below price goes on a watchlist and you wait — often for months. Inactivity is the intended state.
+
+### 5.6 Selling
+No stop-losses; a falling price on an intact thesis is an opportunity. Sell only when: **the thesis broke**, **price far exceeds any defensible value**, or **a materially better opportunity exists** and capital is fully deployed. Never average down on a broken thesis; adding to a sound one at a lower price is the entire point.
+
+### 5.7 Monitoring — faster than annual
+Annual review is too slow for events that destroy capital. **Alerts within days** for: auditor resignation, promoter pledge changes, credit downgrades, large related-party transactions, sudden promoter selling, regulatory action. This is the highest-value automation in the entire project (§9).
+
+---
+
+## 6. Portfolio and risk
+
+**Allocation of investable assets** (as defined in §0):
+
+| Sleeve | Share | Notes |
 |---|---|---|
-| **Kite Connect (Zerodha)** — *chosen primary* | Real-time + historical OHLCV, F&O, portfolio, orders. Paid (~₹500/mo data). | SEBI-registered broker; compliant for the account holder. Thin on full fundamentals/filings. |
-| **Upstox API** | Similar price/order data, option chains, some corporate actions. | Compliant broker API; kept as adapter fallback. |
-| **GFDL (Global Financial Datafeeds)** | Historical OHLCV/tick, corporate actions, shareholding, financial results, board meetings, annual reports. | **Officially licensed exchange redistributor** — the clean path for deep fundamentals + filings. |
-| **Refinitiv / Bloomberg / FactSet** | Full institutional suite. | Fully licensed but enterprise-cost; out of scope for a personal project. |
-| **Official NSE/BSE corporate-filings feeds** | Results, disclosures, announcements, block/bulk deals. | Public regulatory disclosures — legitimate to consume directly per their terms. |
-| **Community/unofficial scrapers (e.g. `nse-*` npm/py packages)** | Convenient but scraped. | **Excluded** — ToS/licensing risk; not used in Artha. |
+| **Passive core** | **~65–70%** | Nifty 50 index fund + one factor fund + a flexi-cap. This is where most of the wealth is actually built. |
+| **Ballast** | ~15% | Gold, debt/liquid, some US equity via INDmoney. Realistically 8–9%, and that is *fine* — its job is to not fall with the rest. |
+| **Active sleeve** | **~15–20%** | 8–10 positions. The experiment. |
 
-**Data policy for Artha:** Kite Connect for prices/execution; NSE/BSE official disclosure feeds for filings; add a licensed vendor (GFDL) when fundamentals depth is the bottleneck. All behind a `DataSource` adapter interface so sources are swappable and their licensing constraints are documented in code.
-
----
-
-## 4. Research summary D — SEBI algo-trading compliance (Feb 2025 framework)
-
-*Framework announced Feb 2025; phased rollout with broad compliance expected through ~2026. Re-verify current thresholds/dates before any live phase — these evolve.*
-
-- **Retail self-built ("DIY") algos** must be registered/approved via the broker at the exchange **once they cross the order-frequency threshold**; below it, the process is streamlined.
-- **Order-frequency threshold:** commonly cited around **≥10 orders/second** triggers registration + higher compliance. (Verify exact current number.)
-- **Broker API structure:** unique client-specific API key; **static/whitelisted IP**; strong auth (2FA / OAuth-style) — no broad username/password API logins.
-- **Exchange tagging:** every algo strategy gets a **unique algo ID**; all algo orders must carry it for audit/traceability.
-- **Family-only use:** a registered retail self-built algo may be used only by the developer + immediate family; no resale/sharing.
-- **Broker is principal/accountable** for all API + algo activity; audit trails required.
-
-**Compliance implication for Artha:** the design is *naturally* compliant because it is low-frequency (research/rebalance cadence, far below 10 OPS) and single-user. Any live phase (Phase 4) must still: use only official Kite Connect, register/tag if required, whitelist a static IP, and keep the operator + family as the only users.
+**Rules:**
+- **8–10 positions**, each ~1.5–2.5% of total investable assets. A total fraud therefore costs ~2% of wealth — survivable, which is the point.
+- Max ~25% of the *sleeve* in any one name; max ~35% in small caps.
+- Max ~30% of the sleeve in one sector; 4 NBFCs is one bet, not four.
+- **No leverage, no F&O, no margin, no derivatives.** Not now, not later.
+- **Cash in the sleeve: static 0–20% range.** Deploy when the buy-below price is hit. No model, no dial, no timing.
+- **Rebalance on a calendar** (annually) or on wide bands — not on a market view.
+- **Expect the sleeve to draw down 40%+ at some point.** At 17.5% allocation that is ~7% of total wealth, which is precisely why it is sized this way. The pre-committed response is: do nothing, or buy.
 
 ---
 
-## 5. Target architecture (research-refined)
+## 7. Costs and taxes
 
-Deterministic Foundry **workflow orchestration** across six agents, each backed by MCP tools, shared memory, and full tracing:
-
-```mermaid
-flowchart LR
-    A[Data Ingestion Agent] --> B[Screener Agent]
-    B --> C[Research / Grounding Agent]
-    C --> D[Backtesting & Evaluation Agent]
-    D --> E[Portfolio / Risk Agent]
-    E --> F[Reporting Agent]
-    subgraph Cross-cutting
-      M[(Foundry Memory /<br/>Decision Log)]
-      O[[Observability /<br/>App Insights Tracing]]
-    end
-    A -.-> M
-    B -.-> M
-    C -.-> M
-    D -.-> M
-    E -.-> M
-    F -.-> M
-    A -.-> O
-    D -.-> O
-    E -.-> O
-```
-
-- **Data ingestion agent** — pulls OHLCV (Kite), filings/announcements (NSE/BSE feeds), fundamentals (vendor), normalizes via `DataSource` adapter.
-- **Screener agent** — governance/red-flag checks (promoter pledging, ROE trend, dividend-vs-profit consistency, disclosure gaps, related-party transactions) + fundamental filters. **No strategy/timing logic.**
-- **Research/grounding agent** — Foundry IQ (Bing + document grounding) summaries with **citations + explicit confidence/uncertainty flags**; forbidden from confident guessing.
-- **Backtesting & evaluation agent** — walk-forward + out-of-sample tests; Sharpe, max drawdown, benchmark-relative alpha; **actively tries to falsify** a strategy before trusting it.
-- **Portfolio/risk agent** — position sizing, exposure limits, drawdown circuit breakers.
-- **Reporting agent** — plain-language periodic report: what it found, what it did, performance vs benchmark, and what it got wrong.
-
-**Design guardrail flagged in-plan:** the six-agent split is a *learning-optimal* topology, not a performance-optimal one. If it ever adds latency/complexity without insight, collapse agents — don't preserve the diagram for its own sake.
+- **Turnover is the enemy.** At 3–6 trades a year, brokerage/STT/stamp duty/DP charges are close to irrelevant — which is itself an argument for the strategy. Model them anyway and reconcile once against a real contract note.
+- **LTCG vs STCG:** holding past the long-term threshold moves gains to the lower rate with an annual exemption. *(Verify current rates — changed July 2024.)* The tax code pays you to be patient.
+- *Honest caveat:* Indian equity mutual funds pay **no tax on internal churn**, so the "tax control" advantage of direct stocks is smaller than commonly claimed. The gain is control of *timing*, not deferral.
+- Every buy/sell records holding period and tax lot, making the annual review and ITR Schedule CG mechanical.
 
 ---
 
-## 6. Phased milestone plan
+## 8. Evidence before capital
 
-Each phase lists: goals · learning checkpoint · success criteria (benchmark-relative / risk-adjusted) · failure criteria · exit gate.
+The sleeve does not start at 15–20%. It earns its way there, and the horizon is deliberately long because **with 3–6 decisions a year, three years cannot distinguish skill from luck.**
 
-### Phase 0 — Environment, learning exercises, scaffolding
-- **Goals:** Provision Foundry project + Application Insights; set up the GitHub Copilot app (agent mode/sessions, Plan mode, custom instructions, one custom agent, one skill); Python repo scaffold; secrets in Key Vault; `DataSource` adapter interface stubbed; Kite Connect sandbox auth working; encode honesty guardrails + a caveman/token-discipline note into `copilot-instructions.md`.
-- **Learning checkpoint:** Can create a Foundry agent, connect one MCP tool, see a trace in App Insights, drive a multi-file change via Copilot Plan mode + agent mode, and articulate the caveman-prompting/context-hygiene baseline (starting tokens-per-task).
-- **Success:** "Hello-agent" runs end-to-end with a traced tool call; a `quant-reviewer` custom agent exists; guardrail instructions committed.
-- **Failure:** Can't get tracing/memory working → resolve before any data work.
-- **Exit gate:** Repo scaffold + one working traced agent + Copilot customization committed.
+| Stage | Active allocation | Condition to advance |
+|---|---|---|
+| Paper | 0% | 10 complete written underwritings, done manually |
+| S1 | ~5% | Personal IPS (§0) complete; benchmark frozen; 3 positions with full theses |
+| S2 | ~10% | 2 years; every position has a thesis and pre-mortem; zero rule breaches |
+| S3 | ~15% | 4 years; ahead of the benchmark set post-tax; ≥15 aged decisions |
+| S4 | ~20% | 7+ years; 30+ aged decisions; edge attributable to a named source |
 
-### Phase 1 — Data ingestion + governance screener (no strategy logic)
-- **Goals:** Implement ingestion agent (Kite OHLCV + NSE/BSE filings), normalize, persist. Implement screener agent with the governance red-flag checks + basic fundamental filters. Log every screen decision + rationale to memory.
-- **Learning checkpoint:** Multi-agent handoff (ingest → screen) under deterministic Foundry workflow orchestration; MCP tool wrapping of a real API; memory-backed decision log.
-- **Success:** For a defined watchlist, the screener reproduces known governance red flags on 2–3 hand-verified case studies (e.g., a historically pledged-promoter company) and produces cited, logged rationales. *No return claims at this stage.*
-- **Failure:** Screener flags are inconsistent / not reproducible, or data licensing is unclear → stop and fix sourcing/logic.
-- **Exit gate:** Reproducible, logged, benchmark-agnostic screening on ≥20 names with documented data provenance.
+**Demotion is automatic and symmetric:** any purchase without a completed checklist and thesis, or any breach of §6, steps the allocation down one stage. No discretionary override.
 
-### Phase 2 — Backtesting framework with strict overfitting controls
-- **Goals:** Backtesting & evaluation agent with **walk-forward + out-of-sample** as the default (in-sample-only runs disallowed). Model transaction costs, slippage, STT/taxes. Compute Sharpe, max drawdown, benchmark-relative alpha vs Nifty 50 + buy-and-hold. Build an explicit **falsification/overfitting report** (parameter sensitivity, deflated Sharpe, regime splits).
-- **Learning checkpoint:** Foundry evaluation/observability on a non-LLM analytical agent; Copilot skill (`walk-forward-backtest`) authored and reused.
-- **Success:** At least one candidate screen/strategy shows **out-of-sample, cost-inclusive, benchmark-relative** performance that survives walk-forward and parameter-sensitivity stress — *or* is honestly rejected. A clean rejection is a **success**, not a failure.
-- **Failure:** The only "wins" are in-sample, cost-free, or vanish out-of-sample → strategy rejected; no promotion.
-- **Exit gate:** A trustworthy, cost-aware, walk-forward backtest harness + at least one honestly-adjudicated strategy verdict.
-
-### Phase 3 — Paper trading (live data, no real capital)
-- **Goals:** Run the full six-agent pipeline against **live market data in paper mode** for a duration long enough to be statistically meaningful (target: multiple market regimes / months, pre-registered before starting — no stopping early because results look good). Portfolio/risk agent enforces exposure limits + drawdown circuit breakers on paper. Reporting agent issues periodic plain-language reports.
-- **Learning checkpoint:** Long-running stateful memory + observability across many sessions; risk-agent circuit-breaker logic; report generation grounded in the decision log.
-- **Success:** Over the pre-registered window, paper performance is **risk-adjusted competitive vs Nifty 50 and buy-and-hold** (e.g., non-negative benchmark-relative alpha at acceptable drawdown), *and* the decision log supports honest post-mortems. Discipline metrics (adherence to risk limits, no look-ahead) matter as much as returns.
-- **Failure:** Underperforms benchmark on a risk-adjusted basis, breaches risk limits, or the log can't explain decisions → do not proceed to live; iterate or stop.
-- **Exit gate:** A pre-registered paper track record + honest post-mortem. **This is the hard gate before any real money.**
-
-### Phase 4 — Tightly capped, SEBI-compliant live pilot *(only if Phases 1–3 hold up honestly, and only with explicit separate go-ahead)*
-- **Goals:** *Requires a separate explicit approval — not implied by this plan.* Small, hard-capped capital via official Kite Connect only. Verify + implement current SEBI algo requirements (registration/tagging if thresholds apply, static IP whitelist, strong auth). Hard risk limits + kill switch. Low-frequency by design (well under the OPS threshold). Family-only use.
-- **Learning checkpoint:** Operating a governed, audited agent system against real consequences; secrets/RBAC/compliance in practice.
-- **Success:** Live behavior matches paper expectations within tolerance; full compliance; risk limits never breached; every order traceable to a logged rationale.
-- **Failure:** Any compliance gap, any unexplained order, or live/paper divergence beyond tolerance → halt immediately.
-- **Exit gate:** N/A — this is the terminal, optional phase, gated on explicit human authorization.
+**Note what stage 4 means: 20% is the *ceiling*, reached after 7 years.** Anyone impatient with that schedule should reread §1.3 — the upside from rushing is ~9% of terminal wealth, and the downside is a permanent loss of capital and confidence.
 
 ---
 
-## 7. Overconfidence / risk flags (raised in-plan, per your request)
+## 9. Software scope — deliberately small
 
-1. **The six-agent architecture can masquerade as edge.** Sophistication ≠ predictive power. The plan measures *research quality and risk discipline*, not "smarter picks." Watch for confusing pipeline complexity with alpha.
-2. **Paper→live divergence is the norm.** No slippage/liquidity surprises in paper. Phase 4 success criteria explicitly check paper-vs-live divergence.
-3. **Regulatory drift.** SEBI thresholds/dates in §4 are point-in-time; the plan mandates re-verification before Phase 4, not reuse of these numbers.
-4. **Survivorship & look-ahead bias** in Indian historical data are easy to introduce accidentally — the backtester must use point-in-time data and delisted names.
-5. **"Statistically meaningful" paper window must be pre-registered.** Otherwise Phase 3 becomes a search for a flattering stopping point.
-6. **LLM confidence ≠ correctness.** The research agent must surface uncertainty; a confident-sounding summary with no citation is a failure mode, not an output.
+The honest risk here is **procrastination-by-engineering**: building satisfying, measurable software instead of doing the ambiguous work of underwriting a company. Building an XBRL pipeline feels like progress. It is not investing progress.
+
+**Rule: nothing gets built until the same manual task has been painful three times.**
+
+**Build (small, high value):**
+- **Governance/filing alerts** (§5.7) — the one genuinely automatable edge; a fund can't watch your 10 names as closely as you can.
+- **Immutable decision journal** — theses, pre-mortems, reviews, and *deliberate inaction*. Append-only, backed up. Losing this loses the track record.
+- **Benchmark + performance engine** — time- and money-weighted, post-tax, versus the frozen benchmark set. Must be correct; gets tests.
+- **Holdings + tax-lot tracking**, reconciled against Kite.
+- **Waya call tracker** — cheap, and settles a recurring cost with evidence.
+
+**Do not build (until proven necessary):**
+- Automated order placement — negative value at 3–6 trades/year, and pure execution risk.
+- A full NSE/BSE XBRL fundamentals pipeline — months of work; Tickertape and annual reports serve 10 names fine.
+- Cycle/timing engine — deleted (§3).
+- Screener over the full market — you can only underwrite ~10 companies anyway. **The bottleneck is your reading time, not idea supply.**
+
+**LLM use** — reading, not deciding: summarize annual reports with page citations; extract related-party transactions, auditor changes, contingent liabilities; diff this year's MD&A against last year's; red-team a written thesis. It may **never** produce a valuation number, pick a stock, or touch the broker API. Note honestly: an LLM red-team is *not* independent evidence — it is a fluent generator that can miss the omission that matters. Treat uncited claims as defects.
 
 ---
 
-## 8. Cross-cutting deliverables (every phase)
-- Decision + rationale logging to Foundry memory; App Insights tracing on.
-- `copilot-instructions.md` guardrails kept current; `quant-reviewer` + `compliance-reviewer` custom agents run on relevant PRs.
-- Data provenance + licensing documented in code next to each `DataSource`.
-- **Token discipline:** apply caveman prompting + context hygiene (§2.1); record tokens-per-completed-task per phase and aim to reduce it without quality loss.
-- A short written learning note per phase (what Foundry/Copilot concept was actually learned, *including* a token-optimization takeaway).
+## 10. Phases
+
+**Phase 0 — Personal finance foundation *(1–2 weeks, no code)***
+IPS written (§0): emergency fund, insurance, debt, obligations, investable assets defined. Passive core and ballast actually set up and funded. **Exit:** written IPS; passive portfolio live. *Most of the wealth outcome is already decided by this step.*
+
+**Phase 1 — Ten manual underwritings *(3–6 months, no code)***
+Write the circle-of-competence list, the fatal-flaw checklist, and the frozen benchmark. Then underwrite **10 companies by hand** — full thesis, pre-mortem, valuation, buy-below price — in a spreadsheet. **Exit:** 10 completed write-ups. **This phase is the actual skill test, and most projects like this die here.** If it can't be sustained, that is decisive information worth far more than a working XBRL parser.
+
+**Phase 2 — First real positions, small *(6–12 months)***
+Deploy stage S1 (~5%) into 3 positions that pass everything. Manual orders via Kite. Build only the journal and alerting. **Exit:** 3 positions with complete documentation, no rule breaches.
+
+**Phase 3 — Supporting software *(ongoing, as pain dictates)***
+Build the §9 list, in order of measured pain. Learning goal runs here: Copilot app agentic workflows, custom agents, token discipline. **Exit:** performance engine reconciles with broker reality.
+
+**Phase 4 — Compound and re-underwrite *(years)***
+Annual re-underwriting of every position against its original thesis and pre-mortem — the most valuable artifact this project produces. Advance stages per §8 only on evidence.
+
+---
+
+## 11. Stopping rules, written now while calm
+
+- **Phase 1 stalls** (can't sustain 10 underwritings) → keep the passive portfolio, drop the active sleeve. **A cheap, early, honest exit — and a likely one.**
+- **Any purchase without a written thesis** → halt new buys, full review.
+- **Two stage demotions** → stop. The constraint is discipline, and more capital never fixes that.
+- **Year 5 behind the benchmark set post-tax** → wind the sleeve into the passive core. (Not year 3 — three years cannot distinguish skill from luck.)
+- **Outperformance not attributable to a named source** → treat as luck; do not scale on it.
+- **Life changes** — job loss, big obligation, health event → sleeve pauses, no new capital. §0 governs, always.
+
+---
+
+## 12. Compliance
+
+- **Personal use only.** Never publish, share or sell recommendations — that requires SEBI RA/IA registration.
+- **No algo registration triggered:** decisions take weeks, orders are placed by hand. If placement is ever automated, that becomes a compliance checkpoint to re-verify — not a refactor.
+- Kite API: client-specific key, static IP, strong auth. Secrets in the OS keyring, never in the repo.
+- Journal and trade logs retained for the statutory period; they double as audit trail and tax record.
+
+---
+
+## 13. Standing deliverables
+
+- **Journal**: every thesis, pre-mortem, trade, and *deliberate inaction*. Backed up.
+- **Quarterly review**: positions vs theses, watchlist distances, post-tax performance and drawdown vs the frozen benchmark set, Waya scorecard, and what was decided *not* to do.
+- **Annual review**: every position re-underwritten from scratch; original pre-mortems re-read against what actually happened; edge attribution.
+- **Tests** on the performance engine, tax-lot tracking, and cost model — the places a silent bug misleads you about your own record.
+- **Learning track**: `copilot-instructions.md` carrying these guardrails; token discipline (caveman prompting, scoped reads, one session per workstream, durable rules in config); one short note per phase. Optional side-track: rebuild a component on Microsoft Foundry, on a branch, never on the critical path.
+
+---
+
+## 14. The one-paragraph summary
+
+Put ~80% of investable assets in a passive core and ballast, and stop optimising it. Run a small active sleeve — 8–10 companies, underwritten by hand — that starts at 5% and can reach 20% only after years of evidence. Expect it to add roughly 9% to terminal wealth over five years if it goes *well*, and to cost about as much if it goes badly. Build almost no software at first; the bottleneck is reading and judgement, not tooling. Treat 20% CAGR as an upside scenario that would make you exceptional, never as a plan dependency. **The realistic outcome is index-like returns, a genuine investing education, and the option to scale if a real edge shows up over a decade.**
