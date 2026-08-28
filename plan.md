@@ -1,12 +1,14 @@
-# Project Artha — Plan (v3)
+# Project Artha — Plan (v4)
 
 > *Artha* — wealth pursued through sound, disciplined means.
 
 **What this is:** an application that researches Indian equities, documents every investment decision to a reviewable standard, and places approved orders on Zerodha Kite — with investing discipline encoded as enforced guardrails rather than remembered intentions.
 
-**What changed from v2:** v2 was *a manual investing practice with a little supporting software*. It explicitly forbade the three things you actually want: it banned automated order placement, banned the LLM from proposing stocks, and banned a market-wide screener. It also front-loaded 9–18 months of no-code manual work. This version inverts that: **the application is the deliverable.** The discipline from v2 survives — not as willpower, but as code.
+**What changed from v2:** v2 was *a manual investing practice with a little supporting software*. It explicitly forbade the three things you actually want: it banned automated order placement, banned the LLM from proposing stocks, and banned a market-wide screener. It also front-loaded 9–18 months of no-code manual work. v3 inverted that: **the application is the deliverable.** The discipline from v2 survives — not as willpower, but as code.
 
-**What has *not* changed:** the arithmetic in §2, the position limits, the evidence gate, and the stopping rules. Those were the parts of v2 that were right, and building software does not repeal them.
+**What changed from v3 (this version):** v3 defined *how* the pipeline runs but left the screener and dossier engine generic — "quality," "growth," "asymmetric" were judged loosely rather than by named, checkable frameworks. v4 embeds **thirteen super-investor frameworks** as explicit formulas, hard blocks, and dossier sections, sourced and attributed individually (§17 gives the full traceability table): Raamdeo Agrawal's QGLP, Vijay Kedia's SMILE, Shelby Davis's Double Play, Peter Lynch's PEG/category taxonomy, Nick Sleep's & early Buffett's Scale Economies Shared, Mohnish Pabrai's Dhandho asymmetry + cloning, mature Buffett & Munger's moat/circle-of-competence, Benjamin Graham's margin of safety, Philip Fisher's scuttlebutt method, Joel Greenblatt's Magic Formula, Rakesh Jhunjhunwala's conviction sizing, Terry Smith's quality-compounding discipline, and William O'Neil's CANSLIM. v4 also makes the two tracks' targets explicit in CAGR terms (§4) rather than only in multiple/timeframe terms.
+
+**What has *not* changed:** the arithmetic in §2, the position limits, the evidence gate, the stopping rules, the Kite Connect execution design (§7.2), and the local Python data-layer stack (§13). Those were the parts of v2/v3 that were right, and adding named frameworks does not repeal them — it disciplines the fuzzy judgement calls the pipeline was already making.
 
 ---
 
@@ -14,7 +16,7 @@
 
 | # | Your goal | How this plan delivers it | Honest caveat |
 |---|---|---|---|
-| 1 | Research and suggest stocks that **2x in 1–2 years**, or beat the index | Two-track research engine (§4): a compounder track and an asymmetric-bet track that explicitly hunts doubles | No process makes *each* pick 2x. The engine hunts asymmetry; the portfolio is judged vs the index (§2.5, §9) |
+| 1 | Research and suggest stocks that **2x–3x in 2–3 years**, or beat the index over 5+ years | Two-track research engine (§4): Track A compounders (15–22% CAGR) and Track B asymmetric bets (26–41% CAGR) that explicitly hunts doubles/triples, screened and diligenced using thirteen named super-investor frameworks (§17) | No process makes *each* pick 2x. The engine hunts asymmetry; the portfolio is judged vs the index (§2.5, §9) |
 | 2 | **Place the order on Kite** once approved | Full execution path with a two-stage human approval gate (§7) | Legal and buildable — SEBI permits it (§12). No broker sandbox exists, so live-order testing needs care |
 | 3 | **Document the entire research** for review before buying | The dossier is the product (§6). Every number carries a source citation; nothing reaches you undocumented | An LLM dossier is *evidence assembled*, not judgement. It can miss the omission that matters |
 | 4 | Plan → **architecture** → implementation plan → build | This plan defines what and why, and fixes the decisions architecture depends on (§16) | — |
@@ -47,7 +49,7 @@ Post-July-2024 rates: **STCG 20%** (held <12 months), **LTCG 12.5%** (held >12 m
 | …and is sold at month 11 | +100% | 20% | **+80%** |
 | …and is sold at month 13 | +100% | 12.5% | **+87.5%** |
 
-Two months of patience is worth **7.5 percentage points** on a double. **Encoded rule: nothing is sold before 12 months unless the thesis is broken.** This is why the goal is framed as 1–2 years, and the engine should bias to the back half of that window.
+Two months of patience is worth **7.5 percentage points** on a double. **Encoded rule: nothing is sold before 12 months unless the thesis is broken.** This is why Track B's target window is framed as 2–3 years (§4), not less, and the engine should bias to the back half of that window.
 
 ### 2.4 The one that matters most: capping winners kills the strategy
 
@@ -60,13 +62,13 @@ The asymmetric track only works if winners are allowed to run past 2x. Two distr
 
 Same hit rate. The difference is entirely the sell rule. **So "2x" is a screening hypothesis, never a sell trigger.** This single insight drives §6's dossier spec and §7's sell rules — a naive implementation that books profit at 2x would systematically underperform.
 
-### 2.5 The reframe on "2x in 1–2 years"
+### 2.5 The reframe on "2x–3x in 2–3 years"
 
-Individual Indian small/midcaps double in 1–2 years routinely — this is real, not fiction. What is fiction is a *portfolio* reliably compounding at that rate. So:
+Individual Indian small/midcaps double (or triple) in 2–3 years routinely — this is real, not fiction. What is fiction is a *portfolio* reliably compounding at that rate. So:
 
-- **The engine's job:** find setups where 2x is *plausible* and the downside is *capped* — asymmetry, not certainty.
+- **The engine's job:** find setups where 2x–3x is *plausible* and the downside is *capped* — asymmetry, not certainty, sharpened in v4 by the thirteen named screens and hard blocks in §5 and §17.
 - **The scorecard's job:** judge the sleeve against the frozen benchmark post-tax over multi-year windows (§9).
-- Individual doubles are the *mechanism*. Beating the index is the *measure*.
+- Individual doubles are the *mechanism*. Beating the index is the *measure*. §4 restates both mechanism and measure as explicit CAGR bands (15–22% Track A, 26–41% Track B) — the same claim, made checkable.
 
 ---
 
@@ -102,18 +104,21 @@ flowchart TD
 
 ## 4. The two tracks
 
-Each track gets its own screens, dossier template, sizing rules, and **its own scorecard** — so you learn which one actually works rather than blending them into one unattributable number.
+Each track gets its own screens, dossier template, sizing rules, and **its own scorecard** — so you learn which one actually works rather than blending them into one unattributable number. **v4 makes both tracks' targets explicit in CAGR terms**, reconciling the "beat the index" framing with the "2x in a few years" framing that motivated this plan in the first place (§1):
 
 | | **Track A — Compounders** | **Track B — Asymmetric bets** |
 |---|---|---|
 | **Thesis shape** | Durable quality bought at a fair price | Earnings inflection, turnaround, cyclical upturn, re-rating, deleveraging |
-| **Screen emphasis** | ROCE consistency, FCF/PAT reconciliation, low debt, earnings stability across a cycle | **Reported** inflection — earnings acceleration (QoQ/YoY), margin expansion, capex-cycle turn, debt reduction, depressed base, low institutional coverage. *Deliberately not estimate revisions* (§13.3b) |
-| **Holding period** | 5+ years | 1–3 years |
-| **Target** | Beat index over a decade | 2x, winners allowed to run past it |
+| **Screen emphasis** | ROCE consistency, FCF/PAT reconciliation, low debt, earnings stability across a cycle; Agrawal QGLP, Graham defensive criteria, Terry Smith quality-compounding metrics, Buffett/Munger moat proxies (§17) | **Reported** inflection — earnings acceleration (QoQ/YoY), margin expansion, capex-cycle turn, debt reduction, depressed base, low institutional coverage. *Deliberately not estimate revisions* (§13.3b). Davis Double Play, Kedia SMILE, O'Neil CANSLIM overlay (§17) |
+| **Holding period** | 5+ years | 2–3 years (the lower end of v3's 1–3 year range is dropped — a 2x in under 2 years is a rarer outcome than the framework should be built to expect) |
+| **Target CAGR** | **15–22%**, low maintenance | **26–41%** — i.e. a 2x–3x total return over the 2–3 year holding period |
+| **Target (mechanism)** | Beat index over a decade | 2x–3x, winners allowed to run past it |
 | **Sizing** | 2–3% of investable assets | **1–1.5%** — tighter, higher variance |
 | **Sleeve share** | ~60% of active sleeve | **~40% cap** |
 | **Failure mode to guard** | Overpaying for quality; value-trap "compounders" | Value traps, accounting fraud, one-off earnings mistaken for inflection |
 | **Sell rule** | Thesis broken; price far exceeds defensible value | Thesis broken; **never a mechanical 2x trim** (§2.4) |
+
+**On the CAGR bands:** these are honest restatements of the mechanism already described in §2.5, not new promises. A 2x in 2 years is a 41% CAGR; a 3x in 3 years is a 44% CAGR; the 26% floor is a 2x stretched to 3 years. Track A's 15–22% band is the same "beat the index, plausibly by several points" claim as v3's §2.2 (~20–30% probability of beating the benchmark), expressed as a number instead of a comparison. **Neither band is a forecast for any individual pick — see §9 for how the sleeve is actually judged.**
 
 **Cross-cutting hard limits** (apply to the whole sleeve): max ~25% in one name, ~30% in one sector, ~35% in small caps. No leverage, no F&O, no margin, no derivatives — ever.
 
@@ -128,7 +133,19 @@ NSE/BSE listed, with a minimum market cap and traded-volume floor so positions a
 A written, machine-readable sector allowlist. Everything outside is filtered out before research spend. Plausibly in: IT services, SaaS, platforms, consumer businesses. Plausibly out: banks/NBFCs (leveraged black boxes), pharma (regulatory binaries), commodities. **Track B may relax sector limits only where the inflection is mechanically evident in the financials** — an explicit, logged exception, since turnarounds cluster in cyclicals.
 
 ### 5.3 Stage 1 — wide quantitative screen
-Cheap, runs over the full universe, track-specific rule sets. Output: a few hundred names, ranked.
+Cheap, runs over the full universe, track-specific rule sets. Output: a few hundred names, ranked. **v4 adds explicit, attributed formulas** (full citations, thresholds and caveats in §17):
+
+**Track A (compounders) additions:**
+- **Quality gate (Agrawal QGLP "Q"):** ROE ≥ 15% and ROCE ≥ 15% (3-yr avg; ≥20% ideal), D/E ≤ 1.0, OCF/PAT ≥ 0.8, promoter holding ≥ 50% and not declining.
+- **Moat/quality refinement (Buffett & Munger; Terry Smith):** ROE/ROIC sustained ≥ 15 of the last 10 years above WACC; for the highest-conviction subset, gross margin ≥ 50%, ROCE ≥ 20%, interest cover ≥ 10×, FCF conversion (FCF/Net Income) ≥ 80%.
+- **Growth gate (Agrawal QGLP "G"):** PAT CAGR ≥ 15% over 5 years (≥20% ideal); no year of EPS decline.
+- **Graham defensive criteria (optional qualifying screen, thresholds relaxed for the Indian listing base per §17's caveat):** current ratio ≥ 2.0; no earnings deficit in the last 10 years; P/E ≤ 15× (3-yr avg EPS); P/B ≤ 1.5×; P/E × P/B ≤ 22.5 (the "Graham Number" ceiling); dividend record relaxed to ≥ 10 consecutive years (Graham's original 20-year test excludes almost every Indian listing).
+
+**Track B (asymmetric bets) additions:**
+- **Davis Double Play screen:** entry P/E in the bottom tercile of the stock's own 5-year history **and** ≤ 80% of sector-median P/E; trailing **and** forward EPS growth ≥ 15%; ROE ≥ 15%; D/E ≤ 1.5×; P/E floor ≥ 5× (excludes distress/value-traps). Implied-return score: `(1 + trailing EPS CAGR)^3 × (sector-median P/E ÷ entry P/E) − 1` — the multiplicative "double play," never additive.
+- **Lynch PEG screen:** `PEG = P/E ÷ trailing 5-yr EPS growth %` (dividend-yield-adjusted — `P/E ÷ (growth % + dividend yield %)` — for stalwarts/slow growers). Buy zone PEG < 1.0 (primary band 0.5–1.0); classify every candidate into Lynch's taxonomy (fast grower ≥20% EPS CAGR, stalwart 8–12%, slow grower ≤6%, cyclical, turnaround, asset play) so the dossier's growth claims are checked against the right comparison set.
+- **Kedia SMILE screen:** market cap ₹200 Cr (Artha's own liquidity floor, §5.1) – ₹5,000 Cr (Kedia's stated ceiling); years since incorporation 10–35 (proxy for "medium" management experience); promoter holding ≥ 40%; low sell-side analyst coverage. The "Large aspiration" and "Extra-large market opportunity" letters are qualitative and deferred to Stage 3 — no numeric proxy is reliable enough for a hard Stage 1 filter.
+- **O'Neil CANSLIM momentum overlay (Track B only, applied *after* the fundamental filters above pass — a timing layer, not a substitute for them):** current-quarter EPS growth ≥ 25% YoY (accelerating preferred); 3-year EPS CAGR ≥ 25% with ROE ≥ 17%; price within 5% of a breakout pivot from a proper chart base (cup-with-handle or flat base); breakout-day volume ≥ 40% above the 50-day average; constructed NSE/BSE relative-strength percentile ≥ 80; rising institutional ownership; Nifty 50/Sensex in a confirmed uptrend. This answers "is it ready to buy *now*," not "is it a good business" — that's still the fundamental screen's job.
 
 ### 5.4 Stage 2 — fatal-flaw hard blocks
 ~15 disqualifying questions from v2, automated where the data allows. **Any "no" or "unknown" ends the analysis.** No score, no override:
@@ -142,10 +159,23 @@ Cheap, runs over the full universe, track-specific rule sets. Output: a few hund
 
 Questions the data cannot answer become **mandatory LLM-verified items** in Stage 3, flagged if unresolvable. **Promoter pledging starts here** — no affordable API exposes it as a structured field (§13.3a), so it is LLM-verified from shareholding-pattern filings and **fails closed** when it cannot be established.
 
+**v4 adds two further hard blocks, both attributed in §17:**
+- **Greenblatt Magic Formula ranking gate:** rank the post-Stage-1 universe by `ROC = EBIT ÷ (Net Working Capital [ex-excess-cash, ex-short-term-debt] + Net Fixed Assets [ex-goodwill])` and by `Earnings Yield = EBIT ÷ Enterprise Value`, sum the two ordinal ranks, and require a candidate to sit in the best combined-rank decile of its (financials/utilities-excluded) universe. This is Greenblatt's exact ranking methodology, not a generic "ROCE > X% and Earnings Yield > Y%" threshold — the distinction matters because ordinal ranking is stable across market cycles while absolute thresholds are not (§17).
+- **Pabrai asymmetry gate (Track B, and any Track A name flagged as statistically distressed-cheap):** a Downside-Floor Score (net-cash/tangible-asset backing, bear-case FCF survival, debt safety, liquidation-value coverage — 8 tests, /16) must score ≥ 10/16, **and** the Asymmetry Ratio (`bull-case upside % ÷ bear-case downside %`) must be ≥ 3:1. Fails either test → hard disqualify, no override.
+
+**Expanded promoter-integrity red flags** (feeding the existing pledging/RPT check above): promoter holding declining over 3 years; pledge > 20% of promoter holding (Agrawal); any SEBI show-cause order, adverse related-party transaction, or auditor resignation within 5 years (Fisher Point 15 — "management of unquestionable integrity" — treated as a single bad-faith signal that no amount of other strength offsets).
+
 ### 5.5 Stage 3 — deep dive (the expensive stage)
 On ~20–30 names: LLM reads annual reports, quarterly filings, concall transcripts and investor presentations. Extracts related-party transactions, auditor changes, contingent liabilities, segment trends; diffs this year's MD&A against last year's; red-teams the emerging thesis.
 
 **Rules:** every extracted claim carries a **source citation (document + page)**. Uncited claims are defects and are dropped. The LLM must report **what it could not verify** — that list goes in the dossier. An LLM red-team is not independent evidence.
+
+**v4 adds five qualitative extraction tasks to this stage** (full prompts and sourcing in §17):
+- **Circle-of-competence gate (Buffett & Munger):** apply the 7-gate checklist (five-sentence business-model test, unit-economics clarity, industry-structure stability, 5–10yr demand forecastability, management understandability, accounting transparency, an identifiable moat source) — all seven must pass before the LLM proceeds to full dossier construction. A fail is flagged "Outside circle of competence," not silently downgraded.
+- **Scuttlebutt extraction (Fisher):** apply the 15-point checklist via digital proxies — employee-sentiment sites, concall Q&A candour/evasion scoring, analyst/competitor commentary, customer-review sentiment, channel/distributor checks, patent/R&D signals, governance red flags — since literal customer/competitor calls aren't feasible for an automated pipeline.
+- **Pricing-power / Scale-Economies-Shared extraction (Sleep & Buffett):** read for explicit management language about passing scale-driven cost savings to customers versus extracting margin (8 extraction prompts in §17); compute 3yr/5yr **ROIIC** (`ΔNOPAT ÷ ΔInvested Capital`, one-period lag) as the quantitative companion — ROIIC ≥ 25–30% is the "genuine compounder" threshold.
+- **Promoter aspiration & TAM assessment (Kedia "L" and "E"):** LLM reads capex plans, revenue-target language, and promoter concall/media tone for evidence of scaling ambition; sizes the addressable market so the candidate's current revenue is a small fraction of it ("the market should be so big the company always remains small").
+- **Conviction scoring (Jhunjhunwala):** the LLM assembles a 1–5 conviction score from evidence quality (business clarity, management-quality checks, FCF/PAT reconciliation, thesis specificity, disconfirming-evidence adequacy) that modulates *where in the sizing band* (§4) a position falls — never a return forecast, and always subject to human override at Gate 1 (§7.1). The companion monitoring rule — **a falling price alone is not a sell signal; only thesis-breaking evidence is** — is already Artha's rule (§7.3); Jhunjhunwala's framework is cited here because it is the clearest public articulation of it.
 
 ### 5.6 Stage 4 — the dossier (§6)
 
@@ -175,6 +205,19 @@ One markdown file per candidate, immutable once approved, versioned in git. **Ma
 
 Sections 12 and 14 are the anti-self-deception mechanism. A dossier missing either is rejected by the tooling, not by your discipline.
 
+**v4 mandatory sections (super-investor frameworks, §17 gives full sourcing).** Sections 15 and 18 are *gates* — a fail there halts the dossier before the remaining sections are written, since there is no point pricing a business the LLM cannot explain or a promoter it cannot trust. The rest are evidence sections like 1–14.
+
+15. **Moat & Circle-of-Competence Memo** (Buffett & Munger) — *gate; both tracks.* Moat type identified with evidence (brand, switching cost, network effect, cost advantage, efficient scale/regulatory); 10-year ROE/ROIC-vs-WACC trend; the five-sentence business-model test result; the 7-gate circle-of-competence checklist outcome; a short inversion-checklist summary ("what would make this fail," per Munger).
+16. **QGLP Scorecard** (Raamdeo Agrawal) — *primarily Track A.* Quality / Growth / Longevity / Price scored 0–3 each (§5.3, §17) with evidence per letter and the combined score out of 12; Price is scored last, by design.
+17. **Margin-of-Safety & Scuttlebutt Notes** (Graham + Fisher, combined into one qualitative-diligence block) — *both tracks.* Graham's seven defensive-investor criteria with pass/fail evidence, computed margin of safety vs. an intrinsic-value estimate, and the Graham Number ceiling; Fisher's 15-point checklist scored pass/partial/fail/unknown with source-cited evidence per point.
+18. **Super-Investor Integrity Gate** (Fisher Point 15 + Agrawal governance signals) — *gate; both tracks.* This is the dossier-level record of the expanded promoter-integrity red flags in §5.4 — kept as its own gated section, not buried in the fatal-flaw checklist, because management integrity is a single-point-of-failure the other 23 sections cannot compensate for.
+19. **The Davis Double Play Mechanism** (Shelby Davis) — *Track B.* Entry P/E, trailing/forward EPS growth, the sector-median re-rating target, the implied multiplicative return (§5.3's formula) and CAGR, and the "double play in reverse" risk flag if earnings and multiple could fall together.
+20. **Scale Economies Shared Assessment** (Nick Sleep & early Buffett) — *both tracks, most relevant where pricing power is the thesis.* ROIIC (3yr/5yr), volume-vs-price decomposition, quoted-and-cited management language on passing scale savings to customers, and a moat-widening/stable/narrowing verdict.
+21. **Magic Formula Attribution** (Joel Greenblatt) — *both tracks.* The stock's ROC and Earnings Yield values, their ordinal ranks and percentile within the Stage-2 investable universe, and the combined rank — a quantitative-entry note, not a standalone buy case.
+22. **Quality-Compounding Checklist** (Terry Smith) — *Track A.* ROCE trend, FCF conversion %, gross margin vs. sector, interest cover, and the reinvestment-runway rationale for why the price is justified despite not being statistically cheap — plus a reminder that "do nothing" means not selling absent thesis impairment, not absolute inertia.
+23. **Super-Investor Alignment / Cloning & Conviction Sizing** (Pabrai + Jhunjhunwala, combined) — *both tracks.* The Pabrai Downside-Floor Score (/16) and Asymmetry Ratio from the Stage-2 gate (§5.4); any cross-reference against known Indian super-investors' disclosed shareholding (bulk/block deals, >1% shareholding-pattern filings); and the Jhunjhunwala conviction score (1–5) with its rationale, mapped to the proposed position size within §4's sizing band.
+24. **CANSLIM Momentum Screen Notes** (William O'Neil) — *Track B only, omitted for Track A.* Current/annual EPS growth, constructed RS-Rating percentile, breakout volume vs. average, market-direction assessment, and the momentum-breakdown definition that feeds §8 monitoring.
+
 ---
 
 ## 7. Approval and execution (goal 2)
@@ -196,7 +239,7 @@ Kite Connect has **no sandbox — every order is live.** Therefore:
 - Credentials in the OS keyring. Never in the repo, never in env files committed to git.
 
 ### 7.3 Sell discipline
-No stop-losses — a falling price on an intact thesis is an opportunity. Sell only when the **thesis breaks**, price **far exceeds** defensible value, or a **materially better opportunity** exists with capital fully deployed. **No mechanical trim at 2x** (§2.4). Never average down on a broken thesis; adding to a sound one at a lower price is the entire point.
+No stop-losses — a falling price on an intact thesis is an opportunity. Sell only when the **thesis breaks**, price **far exceeds** defensible value, or a **materially better opportunity** exists with capital fully deployed. **No mechanical trim at 2x** (§2.4). Never average down on a broken thesis; adding to a sound one at a lower price is the entire point. **v4 attribution, rule unchanged:** this is Terry Smith's "do nothing" — discipline against needless activity, not inertia — and Jhunjhunwala's "a fluctuating price is not business performance" (§5.5, §17); a name in genuine thesis-breaking territory (§8's alert taxonomy) is reviewed promptly, not defended out of stubbornness.
 
 ---
 
@@ -205,6 +248,14 @@ No stop-losses — a falling price on an intact thesis is an opportunity. Sell o
 Alerts within days, not at the next annual report: auditor resignation, promoter pledge changes, credit rating downgrades, large related-party transactions, sudden promoter selling, regulatory action, insider-trading disclosures.
 
 Plus **thesis-specific triggers** from each dossier's §10 — the app watches for the conditions you yourself said would prove you wrong. This is the piece a fund cannot replicate for your ten names, and it goes live **before** real capital does.
+
+**v4 adds four super-investor-derived auto-flags** (sourcing in §17):
+- **Inventory build-up (Lynch):** inventory YoY growth exceeding revenue YoY growth for 2 consecutive quarters raises a WATCH flag; 3 consecutive quarters, or the inventory/revenue ratio hitting a 3-year high, raises an ALERT — unsold goods piling up precedes margin-compressing markdowns.
+- **Margin compression:** gross or operating margin contracting for 2+ consecutive quarters without a stated one-off cause, cross-checked against the Scale-Economies-Shared verdict (§5.5) so a deliberate Sleep-style price-passthrough isn't misread as deterioration.
+- **Promoter pledging (severity tiers, extending the existing §5.4/§8 pledging check):** any new pledge is logged; a pledge increase, or pledge crossing 20% of promoter holding, raises an ALERT; pledge exceeding 50% of promoter holding is treated as thesis-breaking evidence (§5.4).
+- **Momentum breakdown (O'Neil, Track B only):** price falling ≥ 7–8% below the original buy-point pivot is an automatic review trigger; price falling back below the breakout base, or the constructed RS-Rating dropping from ≥ 80 at entry to below 70, raises a review flag; a market-wide distribution-day cluster pauses new Track B entries.
+
+**Alert taxonomy (Jhunjhunwala's "price versus thesis" discipline, formalising §7.3):** every alert is classified Category A — **thesis-neutral** (a price move or sector-wide sell-off with no accompanying fundamentals event: logged, not alerted); Category B — **thesis-review trigger** (e.g. two consecutive unexplained earnings misses, market-share loss, a key departure without succession clarity: surfaces the dossier's §4 thesis for human review); or Category C — **thesis-breaking evidence** (auditor resignation, promoter pledge above the 50% tier, a credit-rating downgrade below investment grade, or any dossier §10 kill trigger firing: drafts a sell-consideration note immediately). Only Category C is a sell signal — this is the encoded version of §7.3's existing rule, not a new one.
 
 ---
 
@@ -250,9 +301,9 @@ Each phase earns the next, and each ends in something that demonstrably works.
 
 **Phase 1 — Data spine.** **Starts with the §13.4 validation spike: test EODHD field completeness against 50–100 known smallcaps before building on it**, and verify stockinsights.ai India pricing and Tijori throughput limits. Then ingest universe, fundamentals and prices. Snapshot and cache with provenance. *Exit: spike results recorded; full universe refreshed reproducibly from a cold start; every field traceable to a source.*
 
-**Phase 2 — Screening + disqualifiers.** Both track screens and the automated fatal-flaw blocks. *Exit: a run produces a ranked shortlist per track, with every exclusion explained.*
+**Phase 2 — Screening + disqualifiers.** Both track screens (including the v4 formula set — Davis, Lynch PEG, Kedia SMILE, Graham, O'Neil overlay — and the Greenblatt/Pabrai hard blocks, §5.3–§5.4) and the automated fatal-flaw blocks. *Exit: a run produces a ranked shortlist per track, with every exclusion explained and attributed to the rule that fired.*
 
-**Phase 3 — Deep research + dossiers.** Filing retrieval, LLM extraction with citations, dossier generation. *Exit: 20+ dossiers that pass their own completeness checks, including disconfirming-evidence and provenance sections.*
+**Phase 3 — Deep research + dossiers.** Filing retrieval, LLM extraction with citations, dossier generation across all 24 mandatory sections (§6). *Exit: 20+ dossiers that pass their own completeness checks, including disconfirming-evidence, provenance, and the v4 gate sections (circle-of-competence, integrity).*
 
 **Phase 4 — Paper ledger + scorecard.** Paper positions, tax lots, time/money-weighted post-tax performance vs the frozen benchmark, per track. **Gets real tests** — a silent bug here misleads you about your own record. *Exit: scorecard reconciles against a hand-computed example.*
 
@@ -356,6 +407,30 @@ EODHD documents that "minor companies have last 6 years and 20 quarters" — for
 
 ---
 
-## 17. One-paragraph summary
+## 17. Super-investor framework reference (v4 traceability)
 
-Build a local-first Python application that screens the full Indian market on two tracks — durable compounders and asymmetric bets that could double in 1–2 years — hard-blocks the disqualifiers, has an LLM read the filings and assemble a fully cited dossier, and then presents it to you for approval before proposing an order you confirm and it places on Kite. Keep ~80% of wealth in a passive core that this application never touches. Let the active sleeve start at 5% and grow only as its per-track scorecard beats a frozen benchmark post-tax. Let winners run past 2x, because capping them is what turns this from a 22% strategy into an 8% one. The realistic outcome is index-like returns, a genuine investing education, a serious piece of software, and the option to scale if a real edge shows up.
+Every framework below was researched individually (one dedicated research pass each) so that its numbers are attributed rather than invented. This table is the audit trail: given any screen output or dossier section, you can trace it back to a named investor, a named primary source, and the exact spec location that implements it.
+
+| # | Investor(s) | Framework | Primary source | Pipeline stage(s) | Dossier section | Spec location |
+|---|---|---|---|---|---|---|
+| 1 | Raamdeo Agrawal (Motilal Oswal) | QGLP / "Buy Right, Sit Tight" | Motilal Oswal Annual Wealth Creation Study (1996–); Agrawal interviews | Stage 1 (Q, G quantitative gates); Stage 3 (L qualitative) | §6.16 QGLP Scorecard | §5.3, §6 |
+| 2 | Vijay Kedia | SMILE | ET Now interviews; Value Research Online | Stage 1 (S, M quantitative bands); Stage 3 (L, E qualitative) | Folded into §6.2/§6.5 (business explainability, financial evidence) — no dedicated section; the letters are hard to isolate cleanly from ordinary diligence | §5.3, §5.5 |
+| 3 | Shelby Davis | Davis Double Play | *The Davis Dynasty* (Rothchild, 2001); Davis Advisors shareholder letters | Stage 1 (screen + implied-return formula) | §6.19 The Davis Double Play Mechanism | §5.3, §6.19 |
+| 4 | Peter Lynch | PEG, growth-category taxonomy, inventory/debt checks | *One Up on Wall Street* (1989); *Beating the Street* (1993) | Stage 1 (PEG + category classification); Stage 7/§8 (inventory monitoring) | Folded into §6.5 (financial evidence) and §6.10/§8 (kill triggers, monitoring) | §5.3, §8 |
+| 5 | Nick Sleep & early Warren Buffett | Scale Economies Shared, ROIIC, pricing power | Nomad Investment Partnership letters (2001–2014); Berkshire Hathaway letters 1977/1983 | Stage 1 (ROIIC, folded into the Buffett/Munger moat refinement); Stage 3 (pricing-power extraction) | §6.20 Scale Economies Shared Assessment | §5.3, §5.5, §6.20 |
+| 6 | Mohnish Pabrai | Dhandho asymmetric risk/reward + cloning | *The Dhandho Investor* (2007) | Stage 2 (asymmetry hard block) | §6.23 Super-Investor Alignment / Cloning & Conviction Sizing (combined with Jhunjhunwala) | §5.4, §6.23 |
+| 7 | Warren Buffett & Charlie Munger (mature framework) | Economic moat, circle of competence, mental models | Berkshire Hathaway letters (1983, 1987, 1989, 1995); *Poor Charlie's Almanack* | Stage 1 (ROE/ROIC-vs-WACC moat proxy); Stage 3 (7-gate circle-of-competence gate) | §6.15 Moat & Circle-of-Competence Memo (gate) | §5.3, §5.5, §6.15 |
+| 8 | Benjamin Graham | Margin of safety, defensive-investor criteria | *The Intelligent Investor* (1973 ed.), Ch. 14 & 20; *Security Analysis* (1934) | Stage 1 (defensive-criteria screen, relaxed for Indian listings) | §6.17 Margin-of-Safety & Scuttlebutt Notes (combined with Fisher) | §5.3, §6.17 |
+| 9 | Philip Fisher | Scuttlebutt method, 15-point checklist | *Common Stocks and Uncommon Profits* (1958), Ch. 3 & 5 | Stage 3 (15-point checklist via digital-proxy extraction) | §6.17 (combined with Graham) | §5.5, §6.17 |
+| 10 | Joel Greenblatt | Magic Formula (ROC + Earnings Yield ranking) | *The Little Book That Beats the Market* (2005) | Stage 2 (ordinal-rank hard block, distinct from a generic ROCE/EY threshold) | §6.21 Magic Formula Attribution | §5.4, §6.21 |
+| 11 | Rakesh Jhunjhunwala | Concentrated conviction sizing; price-vs-thesis discipline | Public interviews (CNBC-TV18, ET Now); documented Titan holding | Stage 3 (conviction scoring); Stage 7/§8 (alert taxonomy) | §6.23 (combined with Pabrai) | §5.5, §6.23, §8 |
+| 12 | Terry Smith | Quality-compounding ("buy good companies, don't overpay, do nothing") | Fundsmith Owner's Manual; annual shareholder letters | Stage 1 (ROCE/gross-margin/FCF-conversion/interest-cover refinement) | §6.22 Quality-Compounding Checklist | §5.3, §6.22, §7.3 |
+| 13 | William O'Neil | CANSLIM momentum/breakout | *How to Make Money in Stocks* (1988) | Stage 1 (Track B momentum overlay, applied after fundamentals pass); Stage 7/§8 (momentum-breakdown flag) | §6.24 CANSLIM Momentum Screen Notes (Track B only) | §5.3, §6.24, §8 |
+
+**Two honest caveats, consistent with §5.5's evidence rules:** first, several frameworks above (Kedia's aspiration/TAM letters, Jhunjhunwala's sizing, Fisher's scuttlebutt) are **qualitative by nature** — the numeric bands attached to them in §5.3/§5.5 are Artha's own operationalisation of a framework the original investor never reduced to a formula, and are labelled as such wherever they appear. Second, no framework here is validated on Indian data by its own author — Davis, Lynch, Fisher, Graham, Greenblatt, Smith and O'Neil built and tested their frameworks on developed-market equities; Agrawal, Kedia, Pabrai and Jhunjhunwala are India-native. Treat the imported frameworks as informed hypotheses the pipeline checks, not settled facts about Indian markets.
+
+---
+
+## 18. One-paragraph summary
+
+Build a local-first Python application that screens the full Indian market on two tracks — Track A compounders targeting 15–22% CAGR over 5+ years, and Track B asymmetric bets targeting 2x–3x (26–41% CAGR) over 2–3 years — using thirteen named, attributed super-investor frameworks (QGLP, SMILE, Davis Double Play, Lynch's PEG/taxonomy, Scale Economies Shared, Dhandho, Buffett/Munger's moat, Graham's margin of safety, Fisher's scuttlebutt, Greenblatt's Magic Formula, Jhunjhunwala's conviction sizing, Terry Smith's quality compounding, and O'Neil's CANSLIM — §17) to sharpen the screens and hard blocks. It hard-blocks the disqualifiers, has an LLM read the filings and assemble a fully cited dossier, and then presents it to you for approval before proposing an order you confirm and it places on Kite. Keep ~80% of wealth in a passive core that this application never touches. Let the active sleeve start at 5% and grow only as its per-track scorecard beats a frozen benchmark post-tax. Let winners run past 2x–3x, because capping them is what turns this from a 20%+ strategy into an 8% one. The realistic outcome is index-like returns, a genuine investing education, a serious piece of software, and the option to scale if a real edge shows up.
