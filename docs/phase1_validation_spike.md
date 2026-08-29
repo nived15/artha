@@ -103,12 +103,17 @@ event) — closing out check (d) empirically the first time you run it.
 
 ## (e) Sector-native fields
 
-**Banking/NBFC** (GNPA, NNPA, NIM, CAR, PCR, CASA): a public NBFC-focused
-screen references these as analytically relevant, but its actual query
-text (the field names) was not exposed publicly — **medium confidence**
-they exist as named fields, unconfirmed exact spelling. `config/
-screener_field_map.example.toml`'s `[profile_2_banking]` section is marked
-`<TODO>` pending a real banking-sector export.
+**Banking/NBFC** (GNPA, NNPA, NIM, CAR, PCR, CASA, credit cost):
+**confirmed NOT available**, empirically, on 2026-08-30. A real Premium
+export of the whole "Financial Services" sector (Banks + NBFC + Housing
+Finance + Capital Markets, 20 columns, `screener_exports/financial-
+services.csv`) contains none of these fields. Screener's "Add column"
+picker also returned no match for the raw components either (Gross/Net
+NPA amount, Provisions, Advances, Capital adequacy, Tier 1, Risk weighted
+assets), which rules out reconstructing them via a custom ratio — Screener's
+custom ratios can only combine fields that are themselves already
+addable. Per plan.md §13.4(e), this means **Profile 2 (banking) also moves
+to Stage 1b**, the same resolution as Profile 3 below.
 
 **Insurance** (VNB margin, embedded value, persistency, solvency ratio):
 **high-confidence NOT available** as native Screener fields — these are
@@ -129,7 +134,7 @@ not expect a Profile 3 CSV export to exist.
 | (b) Shareholding fields | Desk-confirmed exportable (point-in-time + 3yr change scalars) |
 | (c) Export reuse terms | Read; practical judgment call recorded above — proceeding |
 | (d) Smallcap completeness | **Pending your first real CSV export** — run `artha data import-screener` |
-| (e) Sector fields | Insurance → Stage 1b (decided). Banking → pending real export, TODO in field map |
+| (e) Sector fields | Banking/NBFC and Insurance → both Stage 1b (confirmed absent from Screener) |
 
 **Fallback condition (§13.4):** if a real export shows the column ceiling
 or reuse terms fail, the fallback is a paid bulk API (EODHD-class, ~12x

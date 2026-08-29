@@ -52,13 +52,16 @@ dividend_yield_pct = "<TODO: try 'Dividend yield'>"
 sector = "<TODO: try 'Industry' — used for sector-median P/E grouping (Davis Double Play)>"
 
 [profile_2_banking]
-gnpa_pct = "<TODO: exact field name unconfirmed (try 'Gross NPA' or 'GNPA %') — confirm against a real banking-sector export>"
-nnpa_pct = "<TODO: exact field name unconfirmed (try 'Net NPA' or 'NNPA %')>"
-nim_pct = "<TODO: exact field name unconfirmed (try 'Net Interest Margin' or 'NIM')>"
-car_tier1_pct = "<TODO: exact field name unconfirmed (try 'Capital Adequacy Ratio' or 'CAR')>"
-provision_coverage_pct = "<TODO: exact field name unconfirmed (try 'Provision Coverage Ratio' or 'PCR')>"
-casa_pct = "<TODO: exact field name unconfirmed (try 'CASA Ratio' or 'CASA')>"
-credit_cost_pct = "<TODO: exact field name unconfirmed>"
+# Confirmed absent from Screener (2026-08-30, real "Financial Services" export
+# covering Banks+NBFC): not addable as a column or a custom-ratio input.
+# Moves to Stage 1b — see docs/phase1_validation_spike.md §(e).
+gnpa_pct = "<TODO: NOT a native Screener field — confirmed absent 2026-08-30>"
+nnpa_pct = "<TODO: NOT a native Screener field — confirmed absent 2026-08-30>"
+nim_pct = "<TODO: NOT a native Screener field — confirmed absent 2026-08-30>"
+car_tier1_pct = "<TODO: NOT a native Screener field — confirmed absent 2026-08-30>"
+provision_coverage_pct = "<TODO: NOT a native Screener field — confirmed absent 2026-08-30>"
+casa_pct = "<TODO: NOT a native Screener field — confirmed absent 2026-08-30>"
+credit_cost_pct = "<TODO: NOT a native Screener field — confirmed absent 2026-08-30>"
 
 [profile_3_insurance]
 # Desk research found no evidence these are native Screener fields at all

@@ -63,9 +63,9 @@ SHAREHOLDING_REQUIRED_FIELDS: tuple[RequiredField, ...] = (
     RequiredField("promoter_holding_trend_3y", "3-year promoter holding trend", "shareholding", ("§5.4 hard blocks",)),
 )
 
-# §13.4(e): sector-native fields for §5.3a Profiles 2-3. If these are
-# missing from Screener, §5.3a moves these profiles to Stage 1b rather than
-# dropping the sector — see plan.md §13.4(e).
+# §13.4(e): sector-native fields for §5.3a Profiles 2-3, confirmed absent from
+# Screener (2026-08-30 real export) — both profiles move to Stage 1b, kept
+# here only for Stage 1b's own completeness bookkeeping (plan.md §13.4(e)).
 BANKING_SECTOR_FIELDS: tuple[RequiredField, ...] = (
     RequiredField("gnpa_pct", "Gross NPA %", "banking", ("§5.3a Profile 2",)),
     RequiredField("nnpa_pct", "Net NPA %", "banking", ("§5.3a Profile 2",)),
