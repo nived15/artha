@@ -590,9 +590,14 @@ def agent_tools_list_candidate_chunks(ticker: str, topic: str | None, config_pat
 def agent_tools_validate_dossier() -> None:
     """Validate a dossier draft (JSON on stdin) without writing it. Prints JSON {passed, errors}."""
     try:
-        draft = json.loads(sys.stdin.read())
+        # Read raw bytes and decode as UTF-8 explicitly — sys.stdin.read()
+        # decodes using the platform's default encoding, which on Windows
+        # is often the ANSI codepage rather than UTF-8 when stdin is piped
+        # from a subprocess, silently corrupting any non-ASCII character
+        # (e.g. "§", "—", "₹") into mojibake before json.loads ever sees it.
+        draft = json.loads(sys.stdin.buffer.read().decode("utf-8"))
         dossier = dossier_from_dict(draft)
-    except (json.JSONDecodeError, DossierSchemaError) as exc:
+    except (json.JSONDecodeError, UnicodeDecodeError, DossierSchemaError) as exc:
         click.echo(json.dumps({"passed": False, "errors": [{"section": "draft", "reason": str(exc)}]}))
         sys.exit(1)
 
@@ -625,9 +630,11 @@ def agent_tools_write_dossier(
     extension's read-only tool surface never exposes a write path.
     """
     try:
-        draft = json.loads(sys.stdin.read())
+        # See agent_tools_validate_dossier's comment: decode stdin bytes as
+        # UTF-8 explicitly rather than trusting the platform default.
+        draft = json.loads(sys.stdin.buffer.read().decode("utf-8"))
         dossier = dossier_from_dict(draft)
-    except (json.JSONDecodeError, DossierSchemaError) as exc:
+    except (json.JSONDecodeError, UnicodeDecodeError, DossierSchemaError) as exc:
         click.echo(json.dumps({"error": str(exc)}))
         sys.exit(1)
 

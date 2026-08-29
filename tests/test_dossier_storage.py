@@ -29,6 +29,24 @@ def test_write_dossier_file_creates_markdown_under_ticker_dir(tmp_path, valid_do
     assert "# Alpha Ltd (ALPHA)" in path.read_text(encoding="utf-8")
 
 
+def test_write_dossier_file_sanitizes_trailing_dot_in_ticker(tmp_path, valid_dossier_track_a):
+    """Regression test: a ticker ending in '.' (common for Screener.in's
+    abbreviated company names, e.g. "Eco Recyc.") must not silently land
+    in a differently-named directory. Windows' CreateDirectory strips a
+    trailing dot with no error; write_dossier_file must sanitize this
+    itself so behavior is deterministic and identical on every platform,
+    not dependent on the OS silently doing it for us."""
+    dotted = dataclasses.replace(
+        valid_dossier_track_a, identity=dataclasses.replace(valid_dossier_track_a.identity, ticker="Eco Recyc.")
+    )
+    path = write_dossier_file(dotted, run_id="run-001", dossiers_root=tmp_path / "dossiers")
+    assert path.is_file()
+    assert path.parent.name == "Eco Recyc"
+    # The identity's own ticker field is untouched — only the directory
+    # name is sanitized, not the recorded value.
+    assert "Ticker: Eco Recyc." in path.read_text(encoding="utf-8")
+
+
 def test_write_dossier_file_refuses_to_overwrite(tmp_path, valid_dossier_track_a):
     write_dossier_file(valid_dossier_track_a, run_id="run-001", dossiers_root=tmp_path / "dossiers")
     with pytest.raises(DossierAlreadyExistsError):

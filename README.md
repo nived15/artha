@@ -137,6 +137,55 @@ full fan-out for real spends real AI credits across ~12 subagent calls per
 dossier, which belongs to a phase whose job is producing real dossiers, not
 building the plumbing.
 
+## Phase 3 — first real dossiers
+
+One real, fully-cited, validated dossier: **Eco Recycling Limited**
+(`Eco Recyc.` / NSE: ECORECO), Track A —
+[`dossiers/Eco Recyc/run-ecoreco-20260830-001.md`](<dossiers/Eco Recyc/run-ecoreco-20260830-001.md>).
+Produced by acting as each specialized `.github/agents/*.md` role in turn
+against real ingested data (the Stage 1a snapshot already in this repo,
+plus three real, sourced filing documents in `filings/ECORECO/*.txt` built
+from web research and ingested via `artha data import-filing`), then
+assembled, `validate_dossier`-checked, and written via `artha agent-tools
+write-dossier` — the exact same tool surface and CLI commands the factory
+itself shells out to.
+
+**Result:** both gates passed honestly (§15 moat/understandability, §18
+integrity) after real, substantive research — not a rubber stamp — and the
+QGLP combined score came out to a middling 6/12, correctly reflecting a
+statistically expensive stock (37.57x P/E, Greenblatt combined percentile
+48.32%, missing the best-decile ranking gate) with real, unresolved
+diligence gaps (RPT quantum, auditor status, and several Phase 2 fields
+not present in this snapshot — all explicitly listed in §14's
+`could_not_verify`), rather than an inflated buy case. The build script
+(`dossiers/Eco Recyc/run-ecoreco-20260830-001.build.py`) is committed
+alongside the dossier and the `.json` draft it produced, for full
+reproducibility.
+
+**A real bug this run surfaced and fixed:** `artha agent-tools
+validate-dossier`/`write-dossier` read stdin with `sys.stdin.read()`,
+which decodes using the platform default encoding — cp1252 on Windows —
+instead of UTF-8. Any non-ASCII character piped through stdin (e.g. "§",
+"₹", an em dash) silently became mojibake before `json.loads` ever saw it.
+Fixed by decoding `sys.stdin.buffer.read()` as UTF-8 explicitly; regression
+test in `tests/test_cli_agent_tools.py`.
+
+**A second real bug this run surfaced and fixed:** this candidate's own
+ticker, "Eco Recyc." (Screener.in abbreviates longer company names with a
+trailing period), silently became the directory `dossiers/Eco Recyc/` (no
+dot) on Windows — `Path.mkdir()` there strips a trailing dot/space with no
+error, which would also mean Windows and Linux/Mac produce *different*
+directory trees for the same ticker. `write_dossier_file` now sanitizes
+the directory-name component explicitly and identically on every
+platform; regression test in `tests/test_dossier_storage.py`.
+
+**Scope honestly stated:** this is 1 of the "20+ dossiers" plan.md's Phase
+3 exit criterion needs, and it was assembled manually rather than through
+a completed `run_factory("artha-dossier")` call — a real, working
+demonstration of the full harness contract, not yet the
+automated-at-scale version (see the Phase 3a exit criteria below for what
+finishing that wiring needs).
+
 ## Phase 4 — paper ledger + scorecard
 
 A FIFO tax-lot engine (`artha/ledger/tax_lots.py`), post-July-2024 Indian
@@ -260,8 +309,8 @@ Copy-Item config\ips.template.md config\ips.md
       wrong state
 - [x] Storage writes the immutable markdown file + SQLite index row,
       matching implementation_plan.md §16 Q1's "both" resolution
-- [ ] First real dossier generated end-to-end (Phase 3 — needs Phase 3a's
-      agent harness)
+- [x] First real dossier generated end-to-end (Phase 3 — see below;
+      `dossiers/Eco Recyc/run-ecoreco-20260830-001.md`)
 
 ### Phase 3a exit criteria (implementation_plan.md §3-§4)
 
@@ -277,8 +326,15 @@ Copy-Item config\ips.template.md config\ips.md
 - [x] `artha-dossier` factory registered with a declared `argsSchema` and
       limits matching `BudgetConfig`'s defaults; verified via
       `factories_manage inspect`
-- [ ] Full end-to-end dossier generation (Phase 3 — this phase builds the
-      harness, Phase 3 runs it for real candidates)
+- [ ] Full end-to-end dossier generation **through the factory's own
+      fan-out** — one real dossier now exists (Phase 3, below), but it was
+      produced by manually following each `.github/agents/*.md`'s
+      instructions in one research pass, not by `run_factory("artha-dossier")`
+      itself, since `extension.mjs`'s `run()` still has a placeholder
+      assembly step (its own comments say so) that needs the
+      narrative/assembly agent call + JSON merge + `validate_dossier` +
+      `write-dossier` wired in before a real factory run can finish one
+      end to end
 
 ### Phase 4 exit criteria (plan.md §11)
 
@@ -308,3 +364,4 @@ keyring:
 .venv\Scripts\artha secrets set kite_api_key
 .venv\Scripts\artha secrets get kite_api_key   # reports set/not-set only
 ```
+
