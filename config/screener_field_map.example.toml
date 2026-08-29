@@ -33,6 +33,24 @@ promoter_holding_pct = "Promoter holding"
 promoter_pledge_pct = "Pledged percentage"
 promoter_holding_trend_3y = "Change in promoter holding 3Years"
 
+# Phase 2 screening fields (plan.md §5.3) — not part of the §13.4 spike's
+# column-ceiling/shareholding checks, so a <TODO> here does not fail
+# `artha data import-screener`; it surfaces as a per-criterion
+# "needs Stage 1b data" note on the specific screen instead.
+ocf_to_pat = "<TODO: custom ratio 'Cash from Operations / Net Profit' — confirm against a real export>"
+current_ratio = "Current ratio"
+price_to_book = "<TODO: try 'Price to book value' or derive from 'Book value'>"
+profit_growth_5y = "<TODO: try 'Profit growth 5Years' (Phase 1 confirmed the 3Years variant only)>"
+eps_growth_ttm_yoy = "<TODO: no confirmed native field — likely needs a custom ratio against trailing four quarters>"
+eps_growth_latest_q_yoy = "<TODO: no confirmed native field — likely needs a custom ratio against the latest quarter>"
+gross_margin = "<TODO: try 'OPM' as a proxy, or a custom ratio (Sales - COGS) / Sales if a separate COGS field exists>"
+interest_coverage = "<TODO: try 'Interest coverage ratio'>"
+fcf_conversion_pct = "<TODO: custom ratio 'Free cash flow / Net profit' — needs FCF, not confirmed as a native field>"
+years_since_incorporation = "<TODO: not a Screener field — likely needs to be looked up separately per company>"
+analyst_coverage_count = "<TODO: not a Screener field — Screener's own 'expected EPS' sparsity is itself the low-coverage signal (plan.md §13.3b); no coverage-count column confirmed>"
+dividend_yield_pct = "<TODO: try 'Dividend yield'>"
+sector = "<TODO: try 'Industry' — used for sector-median P/E grouping (Davis Double Play)>"
+
 [profile_2_banking]
 gnpa_pct = "<TODO: exact field name unconfirmed (try 'Gross NPA' or 'GNPA %') — confirm against a real banking-sector export>"
 nnpa_pct = "<TODO: exact field name unconfirmed (try 'Net NPA' or 'NNPA %')>"

@@ -57,7 +57,7 @@ factor_fund_isin = "INF789F01XA2"
 
 def test_stub_commands_fail_clearly():
     runner = CliRunner()
-    for args in (["screen"], ["research", "RELIANCE"], ["review"], ["order"]):
+    for args in (["research", "RELIANCE"], ["review"], ["order"]):
         result = runner.invoke(cli, args)
         assert result.exit_code == 1
         assert "not implemented yet" in result.output
