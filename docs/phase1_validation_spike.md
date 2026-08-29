@@ -85,21 +85,22 @@ not a blocking one.
 your own paid export privately for your own reproducibility is the
 weakest possible form of "reuse" under any reading of the clause.
 
-## (d) Smallcap completeness — BLOCKED, needs a real export
+## (d) Smallcap completeness — CONFIRMED, 2026-08-30
 
-Cannot be measured without an actual CSV export covering 50-100 known
-smallcaps. **Action for you:** once you have a Screener Premium account,
-run a Profile 1 screen (e.g. no filter beyond §5.1's market-cap/liquidity
-floor) restricted to or including known smallcaps, export the CSV, then
-run:
-
-```
-artha data import-screener path/to/export.csv --source screener_profile1 --profile profile_1_standard
-```
-
-This automatically computes and records per-field completeness
-(`snapshot_fields` table) and journals the result (`screener_export_ingested`
-event) — closing out check (d) empirically the first time you run it.
+Closed out empirically against a real Profile 1 Premium export
+(`screener_exports/artha-profile-1-validation.csv`, 1104 rows, market caps
+ranging ₹200-995cr — entirely within the smallcap band): `artha data
+import-screener screener_exports/artha-profile-1-validation.csv --source
+screener_profile1 --profile profile_1_standard` reports **column_ceiling_ok:
+True** (23 of 50 columns used) and **passed: True** — every one of §13.4(a)'s
+core + Greenblatt-ROC + shareholding required fields resolves to a real
+column, with per-field completeness from 71.7% (`promoter_holding_trend_3y`)
+to 100% (`market_cap`). The custom ratios `Artha PEG` and `Artha NWC` (for
+`peg_ratio` and `net_working_capital_ex_cash_ex_debt`, previously `<TODO>`
+in the field map) are confirmed working Screener custom-ratio columns at
+78.5% and 99.7% completeness respectively. This closes out both (a) and
+(d) for real; the snapshot is recorded (`snapshot_fields` table) and
+journaled (`screener_export_ingested` event) via this exact command.
 
 ## (e) Sector-native fields
 
@@ -130,11 +131,20 @@ not expect a Profile 3 CSV export to exist.
 
 | Check | Status |
 |---|---|
-| (a) Column ceiling | Desk-confirmed plausible; auto-verified on your first real export |
-| (b) Shareholding fields | Desk-confirmed exportable (point-in-time + 3yr change scalars) |
+| (a) Column ceiling | **Confirmed, 2026-08-30** — real export uses 23/50 columns |
+| (b) Shareholding fields | **Confirmed, 2026-08-30** — all three resolve at 71.7-98.8% completeness |
 | (c) Export reuse terms | Read; practical judgment call recorded above — proceeding |
-| (d) Smallcap completeness | **Pending your first real CSV export** — run `artha data import-screener` |
+| (d) Smallcap completeness | **Confirmed, 2026-08-30** — 1104-row export, entirely ₹200-995cr smallcap band |
 | (e) Sector fields | Banking/NBFC and Insurance → both Stage 1b (confirmed absent from Screener) |
+
+**Spike closed.** All five checks are now resolved — (a)/(b)/(d) confirmed
+against real Profile 1 data, (c) is a recorded human judgment call, (e)
+resolved both sector profiles to Stage 1b. Phase 1's remaining open item is
+purely a config-completeness one, not a design question: `config/
+screener_field_map.toml`'s Phase 2-only fields (`ocf_to_pat`,
+`profit_growth_5y`, etc. — not part of this spike's required-field set)
+still need real column confirmation once an export including those columns
+exists.
 
 **Fallback condition (§13.4):** if a real export shows the column ceiling
 or reuse terms fail, the fallback is a paid bulk API (EODHD-class, ~12x

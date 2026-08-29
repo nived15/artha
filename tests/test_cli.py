@@ -19,7 +19,7 @@ def test_init_creates_database(tmp_path, monkeypatch):
     result = runner.invoke(cli, ["init", "--config", "nonexistent.toml"])
     assert result.exit_code == 0
     assert (tmp_path / ".artha" / "artha.db").is_file()
-    assert "schema version 3" in result.output
+    assert "schema version 4" in result.output
 
 
 def test_config_show_reports_error_for_missing_file(tmp_path, monkeypatch):

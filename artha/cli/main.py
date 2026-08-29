@@ -26,6 +26,15 @@ from artha.dossier.serialization import DossierSchemaError, dossier_from_dict
 from artha.dossier.storage import write_dossier
 from artha.dossier.validator import validate_dossier
 from artha.journal import Journal
+from artha.ledger.positions import list_open_positions
+from artha.ledger.scorecard import (
+    compare_to_benchmark,
+    fund_annualized_return,
+    get_benchmark_nav_series,
+    record_benchmark_nav,
+    track_scorecard,
+)
+from artha.ledger.tax_lots import SellDisciplineError, record_buy, record_sell
 from artha.screening.loader import build_company_records
 from artha.screening.pipeline import screen_track_a, screen_track_b
 from artha.secrets import SecretNotFoundError, delete_secret, has_secret, set_secret
@@ -298,6 +307,190 @@ def data_show_chunk(doc_id: str, page: int, chunk_index: int, config_path: str) 
         click.echo(f"no such chunk: ({doc_id}, page={page}, chunk_index={chunk_index})", err=True)
         sys.exit(1)
     click.echo(chunk.text)
+
+
+@cli.group()
+def ledger() -> None:
+    """Paper (or real) ledger: tax lots, positions, and the per-track scorecard (Phase 4)."""
+
+
+@ledger.command("buy")
+@click.argument("ticker")
+@click.option("--track", type=click.Choice(["A", "B"]), required=True)
+@click.option("--quantity", type=float, required=True)
+@click.option("--price", type=float, required=True)
+@click.option("--trade-date", required=True, help="ISO date, e.g. 2025-01-15.")
+@click.option("--note", default=None)
+@click.option("--config", "config_path", default=DEFAULT_CONFIG_PATH, show_default=True)
+def ledger_buy(ticker: str, track: str, quantity: float, price: float, trade_date: str, note: str | None, config_path: str) -> None:
+    """Record a BUY: creates a new, fully-open tax lot."""
+    app_config = _load_config_or_default(config_path)
+    conn = connect(app_config.db_path)
+    try:
+        apply_migrations(conn)
+        lot = record_buy(conn, ticker=ticker, track=track, quantity=quantity, price=price, trade_date=trade_date, note=note)
+        Journal(conn).append(
+            event_type="trade_buy",
+            entity_type="tax_lot",
+            entity_id=lot.lot_id,
+            payload={"ticker": ticker, "track": track, "quantity": quantity, "price": price, "trade_date": trade_date, "note": note},
+        )
+    finally:
+        conn.close()
+    click.echo(f"lot_id: {lot.lot_id}  bought {quantity} {ticker} @ {price} on {trade_date}")
+
+
+@ledger.command("sell")
+@click.argument("ticker")
+@click.option("--quantity", type=float, required=True)
+@click.option("--price", type=float, required=True)
+@click.option("--trade-date", required=True, help="ISO date, e.g. 2025-06-01.")
+@click.option("--override-reason", default=None, help="Required if any consumed lot is held <12 months (config/ips.md §5).")
+@click.option("--config", "config_path", default=DEFAULT_CONFIG_PATH, show_default=True)
+def ledger_sell(ticker: str, quantity: float, price: float, trade_date: str, override_reason: str | None, config_path: str) -> None:
+    """Record a SELL: consumes open lots FIFO, producing one realized gain per lot touched."""
+    app_config = _load_config_or_default(config_path)
+    conn = connect(app_config.db_path)
+    try:
+        apply_migrations(conn)
+        try:
+            realized = record_sell(
+                conn, ticker=ticker, quantity=quantity, price=price, trade_date=trade_date, override_reason=override_reason
+            )
+        except SellDisciplineError as exc:
+            click.echo(str(exc), err=True)
+            sys.exit(1)
+        Journal(conn).append(
+            event_type="trade_sell",
+            entity_type="ticker",
+            entity_id=ticker,
+            payload={
+                "ticker": ticker,
+                "quantity": quantity,
+                "price": price,
+                "trade_date": trade_date,
+                "override_reason": override_reason,
+                "realized_gains": [
+                    {"lot_id": rg.lot_id, "quantity": rg.quantity, "gain": rg.gain, "gain_type": rg.gain_type, "holding_days": rg.holding_days}
+                    for rg in realized
+                ],
+            },
+        )
+    finally:
+        conn.close()
+    click.echo(f"sold {quantity} {ticker} @ {price} on {trade_date}")
+    for rg in realized:
+        click.echo(f"  realized {rg.gain_type}: qty={rg.quantity} gain={rg.gain:.2f} (holding_days={rg.holding_days})")
+
+
+@ledger.command("positions")
+@click.option("--track", type=click.Choice(["A", "B"]), default=None)
+@click.option("--config", "config_path", default=DEFAULT_CONFIG_PATH, show_default=True)
+def ledger_positions(track: str | None, config_path: str) -> None:
+    """List open positions, optionally filtered by track."""
+    app_config = _load_config_or_default(config_path)
+    conn = connect(app_config.db_path)
+    try:
+        apply_migrations(conn)
+        positions = list_open_positions(conn, track=track)
+    finally:
+        conn.close()
+    if not positions:
+        click.echo("no open positions.")
+        return
+    for p in positions:
+        click.echo(f"{p.ticker} (track {p.track}): qty={p.quantity}  avg_cost={p.avg_cost_per_unit:.2f}  cost_basis={p.cost_basis:.2f}")
+
+
+@ledger.command("import-benchmark-nav")
+@click.option("--fund-name", required=True, help="Must match config/artha.toml's [benchmark] fund name exactly.")
+@click.option("--nav-date", required=True)
+@click.option("--nav", type=float, required=True)
+@click.option("--config", "config_path", default=DEFAULT_CONFIG_PATH, show_default=True)
+def ledger_import_benchmark_nav(fund_name: str, nav_date: str, nav: float, config_path: str) -> None:
+    """Record one NAV point for a frozen-benchmark fund."""
+    app_config = _load_config_or_default(config_path)
+    conn = connect(app_config.db_path)
+    try:
+        apply_migrations(conn)
+        record_benchmark_nav(conn, fund_name=fund_name, nav_date=nav_date, nav=nav)
+        Journal(conn).append(
+            event_type="benchmark_nav_recorded",
+            entity_type="benchmark_nav",
+            entity_id=fund_name,
+            payload={"fund_name": fund_name, "nav_date": nav_date, "nav": nav},
+        )
+    finally:
+        conn.close()
+    click.echo(f"recorded {fund_name} NAV {nav} on {nav_date}")
+
+
+@ledger.command("scorecard")
+@click.option("--track", type=click.Choice(["A", "B"]), required=True)
+@click.option("--as-of-date", required=True)
+@click.option("--price", "prices", multiple=True, help="TICKER=PRICE, repeatable — the current mark for each open position.")
+@click.option("--config", "config_path", default=DEFAULT_CONFIG_PATH, show_default=True)
+def ledger_scorecard(track: str, as_of_date: str, prices: tuple[str, ...], config_path: str) -> None:
+    """Compute the post-tax, money-weighted scorecard for one track (plan.md §9)."""
+    current_prices: dict[str, float] = {}
+    for entry in prices:
+        if "=" not in entry:
+            click.echo(f"invalid --price {entry!r}; expected TICKER=PRICE", err=True)
+            sys.exit(1)
+        ticker, _, value = entry.partition("=")
+        try:
+            current_prices[ticker] = float(value)
+        except ValueError:
+            click.echo(f"invalid price in --price {entry!r}", err=True)
+            sys.exit(1)
+
+    app_config = _load_config_or_default(config_path)
+    conn = connect(app_config.db_path)
+    try:
+        apply_migrations(conn)
+        card = track_scorecard(conn, track=track, as_of_date=as_of_date, current_prices=current_prices)
+
+        index_series = get_benchmark_nav_series(conn, app_config.benchmark.index_fund_name)
+        factor_series = get_benchmark_nav_series(conn, app_config.benchmark.factor_fund_name)
+        comparison = None
+        if len(index_series) >= 2 and len(factor_series) >= 2:
+            index_return = fund_annualized_return(index_series)
+            factor_return = fund_annualized_return(factor_series)
+            comparison = compare_to_benchmark(card.xirr_post_tax, index_return, factor_return)
+
+        Journal(conn).append(
+            event_type="scorecard_computed",
+            entity_type="track",
+            entity_id=track,
+            payload={
+                "as_of_date": as_of_date,
+                "invested_capital": card.invested_capital,
+                "realized_tax": card.realized_tax,
+                "accrued_tax_on_unrealized": card.accrued_tax_on_unrealized,
+                "gross_ending_value": card.gross_ending_value,
+                "post_tax_ending_value": card.post_tax_ending_value,
+                "xirr_gross": card.xirr_gross,
+                "xirr_post_tax": card.xirr_post_tax,
+                "beats_benchmark_set": comparison.beats_benchmark_set if comparison else None,
+            },
+        )
+    finally:
+        conn.close()
+
+    click.echo(f"track {track} scorecard as of {as_of_date}:")
+    click.echo(f"  invested capital: {card.invested_capital:.2f}")
+    click.echo(f"  realized tax: {card.realized_tax:.2f}")
+    click.echo(f"  accrued tax on unrealized: {card.accrued_tax_on_unrealized:.2f}")
+    click.echo(f"  gross ending value: {card.gross_ending_value:.2f}")
+    click.echo(f"  post-tax ending value: {card.post_tax_ending_value:.2f}")
+    click.echo(f"  XIRR (gross): {card.xirr_gross:.2%}")
+    click.echo(f"  XIRR (post-tax): {card.xirr_post_tax:.2%}")
+    if comparison:
+        click.echo(f"  vs index fund ({app_config.benchmark.index_fund_name}): {comparison.index_return:.2%} ({'beats' if comparison.beats_index else 'trails'})")
+        click.echo(f"  vs factor fund ({app_config.benchmark.factor_fund_name}): {comparison.factor_return:.2%} ({'beats' if comparison.beats_factor else 'trails'})")
+        click.echo(f"  beats frozen benchmark set: {comparison.beats_benchmark_set}")
+    else:
+        click.echo("  (no benchmark NAV history yet — run 'artha ledger import-benchmark-nav' for both funds, at least 2 points each)")
 
 
 def _load_config_or_default(config_path: str) -> AppConfig:
