@@ -124,6 +124,73 @@ _MIGRATIONS: list[tuple[int, str, str]] = [
         CREATE INDEX IF NOT EXISTS idx_dossiers_ticker ON dossiers (ticker, created_at);
         """,
     ),
+    (
+        4,
+        "phase4_paper_ledger",
+        """
+        -- Every buy/sell, paper or real (plan.md §11 Phase 4). A tax lot is
+        -- created per BUY; a SELL consumes one or more open lots FIFO and
+        -- writes matching realized_gains rows (artha/ledger/tax_lots.py).
+        CREATE TABLE IF NOT EXISTS trades (
+            trade_id       TEXT PRIMARY KEY,
+            ticker         TEXT NOT NULL,
+            track          TEXT NOT NULL,   -- 'A' or 'B'
+            side           TEXT NOT NULL,   -- 'BUY' or 'SELL'
+            quantity       REAL NOT NULL,
+            price          REAL NOT NULL,
+            trade_date     TEXT NOT NULL,   -- ISO date
+            note           TEXT,            -- e.g. a sell-discipline override reason
+            created_at     TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_trades_ticker ON trades (ticker, trade_date);
+
+        -- One row per BUY tranche; open_quantity shrinks as SELLs consume it
+        -- FIFO (India's own-history tax-lot convention).
+        CREATE TABLE IF NOT EXISTS tax_lots (
+            lot_id                TEXT PRIMARY KEY,
+            ticker                TEXT NOT NULL,
+            track                 TEXT NOT NULL,
+            quantity              REAL NOT NULL,   -- original BUY quantity
+            open_quantity         REAL NOT NULL,   -- remaining unsold quantity
+            cost_basis_per_unit   REAL NOT NULL,
+            purchase_date         TEXT NOT NULL,   -- ISO date
+            buy_trade_id          TEXT NOT NULL REFERENCES trades (trade_id),
+            created_at            TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_tax_lots_ticker ON tax_lots (ticker, purchase_date);
+
+        -- One row per (sell trade, lot) consumption — plan.md §2.3's
+        -- STCG/LTCG split, computed at realization time from holding_days.
+        CREATE TABLE IF NOT EXISTS realized_gains (
+            realization_id   TEXT PRIMARY KEY,
+            sell_trade_id    TEXT NOT NULL REFERENCES trades (trade_id),
+            lot_id           TEXT NOT NULL REFERENCES tax_lots (lot_id),
+            ticker           TEXT NOT NULL,
+            track            TEXT NOT NULL,
+            quantity         REAL NOT NULL,
+            cost_basis       REAL NOT NULL,
+            proceeds         REAL NOT NULL,
+            gain             REAL NOT NULL,
+            holding_days     INTEGER NOT NULL,
+            gain_type        TEXT NOT NULL,   -- 'STCG' or 'LTCG'
+            realized_date    TEXT NOT NULL    -- ISO date (the sell's trade_date)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_realized_gains_ticker ON realized_gains (ticker, realized_date);
+
+        -- Frozen-benchmark NAV history (plan.md §9): one series per named
+        -- fund (index_fund_name / factor_fund_name from config), so the
+        -- scorecard can compute each component's own return independently.
+        CREATE TABLE IF NOT EXISTS benchmark_nav (
+            fund_name   TEXT NOT NULL,
+            nav_date    TEXT NOT NULL,   -- ISO date
+            nav         REAL NOT NULL,
+            PRIMARY KEY (fund_name, nav_date)
+        );
+        """,
+    ),
 ]
 
 

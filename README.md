@@ -4,7 +4,7 @@ Wealth pursued through sound, disciplined means.
 
 See [`plan.md`](plan.md) for the full specification and
 [`implementation_plan.md`](implementation_plan.md) for the build sequence and
-architecture. This README covers Phases 0-3a.
+architecture. This README covers Phases 0-4.
 
 ## Phase 0 — foundations
 
@@ -137,6 +137,43 @@ full fan-out for real spends real AI credits across ~12 subagent calls per
 dossier, which belongs to a phase whose job is producing real dossiers, not
 building the plumbing.
 
+## Phase 4 — paper ledger + scorecard
+
+A FIFO tax-lot engine (`artha/ledger/tax_lots.py`), post-July-2024 Indian
+capital-gains tax (`artha/ledger/tax.py`: STCG 20% held ≤12 months, LTCG
+12.5% held longer, ₹1.25L annual LTCG exemption, standard loss set-off
+rules), position aggregation with an accrued-tax-on-unrealized-gains
+estimate (`artha/ledger/positions.py`), and the per-track, post-tax,
+money-weighted scorecard against the frozen benchmark's two components,
+judged independently (`artha/ledger/scorecard.py`) — plan.md §9 and §11.
+
+**Sell discipline is enforced, not just documented:** `artha ledger sell`
+refuses to touch any tax lot held under 12 months unless you pass
+`--override-reason`, matching config/ips.md §5's own rule literally rather
+than trusting you to remember it.
+
+```powershell
+.venv\Scripts\artha ledger buy ALPHA --track A --quantity 100 --price 500 --trade-date 2025-01-15
+.venv\Scripts\artha ledger sell ALPHA --quantity 40 --price 650 --trade-date 2026-03-01
+.venv\Scripts\artha ledger positions --track A
+
+# Frozen-benchmark NAV history, one point at a time (fund names must match
+# config/artha.toml's [benchmark] exactly):
+.venv\Scripts\artha ledger import-benchmark-nav --fund-name "<index fund>" --nav-date 2025-01-15 --nav 250.0
+.venv\Scripts\artha ledger import-benchmark-nav --fund-name "<index fund>" --nav-date 2026-03-01 --nav 275.0
+
+.venv\Scripts\artha ledger scorecard --track A --as-of-date 2026-03-01 --price ALPHA=650
+```
+
+**Honest simplifications, carried forward from `artha/ledger/scorecard.py`'s
+own docstring:** `time_weighted_return` needs periodic valuation marks
+supplied by the caller (there's no live price feed to derive them from
+automatically) — expose it as a reusable function, don't try to auto-derive
+it from trades alone. Post-tax XIRR applies each fiscal year's realized
+capital-gains tax as one lump-sum outflow at the valuation date rather than
+modeling the exact ITR payment date. Loss carry-forward across fiscal years
+is not modeled yet — revisit if the paper record shows it matters.
+
 ### Setup
 
 ```powershell
@@ -163,9 +200,12 @@ Copy-Item config\ips.template.md config\ips.md
 
 ### Phase 0 exit criteria (plan.md §11)
 
-- [ ] IPS written and frozen (`config/ips.md`, human action — see the template)
-- [ ] Benchmark frozen and recorded (`config/artha.toml`'s `[benchmark]` section)
-- [ ] Passive core and ballast funded (manual brokerage action, outside this repo)
+- [x] IPS written and frozen (`config/ips.md`, frozen 2026-08-29)
+- [x] Benchmark frozen and recorded (`config/artha.toml`'s `[benchmark]` section:
+      70% UTI Nifty 50 Index Fund / 30% Motilal Oswal Nifty 200 Momentum 30
+      Index Fund, frozen 2026-08-29)
+- [x] Passive core and ballast funded (2026-08-29, per `config/ips.md` §2 —
+      manual brokerage action, outside this repo)
 - [x] Repo skeleton, SQLite schema, config, secrets in keyring
 - [x] `artha --version` runs
 
@@ -177,9 +217,13 @@ Copy-Item config\ips.template.md config\ips.md
       `data.snapshot_max_age_days`
 - [x] Citation-preserving (doc_id, page, chunk_index) filing chunk store
 - [x] §13.4 desk-research recorded (`docs/phase1_validation_spike.md`)
-- [ ] §13.4 empirical checks — smallcap completeness, full column-ceiling
-      confirmation (human action — needs a real Screener Premium export;
-      run `artha data import-screener` once you have one)
+- [x] §13.4 empirical checks — confirmed 2026-08-30 against real Screener
+      Premium exports (`screener_exports/artha-profile-1-validation.csv`,
+      1104 smallcap rows, `screener_exports/financial-services.csv`, 654
+      rows). Column ceiling, shareholding fields, and smallcap completeness
+      all pass for Profile 1; banking/insurance sector fields confirmed
+      absent, moving Profiles 2/3 to Stage 1b. See
+      `docs/phase1_validation_spike.md`.
 
 ### Phase 2 exit criteria (plan.md §11)
 
@@ -187,10 +231,15 @@ Copy-Item config\ips.template.md config\ips.md
       refinement, Davis, Lynch PEG, Kedia SMILE, O'Neil CANSLIM) and the
       Greenblatt/Pabrai hard blocks implemented, deterministic, unit-tested
 - [x] `artha screen` produces a ranked shortlist per track, with every
-      exclusion attributed to the exact rule that fired
+      exclusion attributed to the exact rule that fired — verified against
+      the real 1104-row Profile 1 snapshot above (Track A: 0 shortlisted,
+      909 excluded, 195 pending Stage 1b data; Track B: 0 shortlisted, 1104
+      excluded by the Greenblatt/Pabrai hard blocks)
 - [ ] Fill in the remaining `config/screener_field_map.toml` Phase 2 fields
       (`ocf_to_pat`, `profit_growth_5y`, etc.) against a real export so the
-      screens run on complete data rather than reporting "pending"
+      screens run on complete data rather than reporting "pending" — not
+      part of §13.4's required-field set, and the current real exports
+      don't include these columns yet
 
 ### Phase 2.5 exit criteria (implementation_plan.md §3)
 
@@ -220,6 +269,25 @@ Copy-Item config\ips.template.md config\ips.md
       `factories_manage inspect`
 - [ ] Full end-to-end dossier generation (Phase 3 — this phase builds the
       harness, Phase 3 runs it for real candidates)
+
+### Phase 4 exit criteria (plan.md §11)
+
+- [x] Paper positions (`artha/ledger/positions.py`), FIFO tax lots
+      (`artha/ledger/tax_lots.py`), and time/money-weighted post-tax
+      performance vs. the frozen benchmark, per track
+      (`artha/ledger/scorecard.py`)
+- [x] Sell discipline enforced: selling a lot held <12 months raises
+      `SellDisciplineError` unless `--override-reason` is given
+      (config/ips.md §5)
+- [x] **Gets real tests**: `tests/test_tax_lots.py`, `test_tax.py`,
+      `test_positions.py`, `test_scorecard.py` — 39 tests total
+- [x] Scorecard reconciles against a hand-computed example
+      (`test_xirr_single_buy_single_sale_reconciles_by_hand`,
+      `test_time_weighted_return_reconciles_by_hand`,
+      `test_track_scorecard_reconciles_by_hand`)
+- [ ] Real trades entered as they happen (`artha ledger buy`/`sell`) and
+      benchmark NAV tracked over time (`artha ledger import-benchmark-nav`)
+      — this is ongoing, human-driven data entry, not a one-time build step
 
 ### Credentials
 
