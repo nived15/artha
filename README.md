@@ -4,7 +4,7 @@ Wealth pursued through sound, disciplined means.
 
 See [`plan.md`](plan.md) for the full specification and
 [`implementation_plan.md`](implementation_plan.md) for the build sequence and
-architecture. This README covers Phases 0-2.5.
+architecture. This README covers Phases 0-3a.
 
 ## Phase 0 — foundations
 
@@ -92,6 +92,51 @@ from a missing/incomplete section. Track-conditional sections (19 Davis,
 22 Terry Smith, 24 CANSLIM) are typed `X | None` so "not applicable to
 this track" and "applicable but missing" are never conflated.
 
+## Phase 3a — agent harness (extension, agents, skills, factory)
+
+The Copilot-facing machinery that will generate real dossiers in Phase 3:
+
+- **`.github/extensions/artha-tools/`** — a project extension exposing four
+  read-only tools (`get_filing_chunk`, `get_candidate`,
+  `list_candidate_chunks`, `validate_dossier`) that shell out to new
+  `artha agent-tools ...` CLI commands (JSON in/out). No write/order tools
+  live here — the factory's own write step is server-side orchestration
+  code, never an agent-callable tool.
+- **`.github/agents/`** — one custom agent per dossier framework section
+  (§15 moat/understandability gate through §24 CANSLIM), plus a citation
+  verifier (adversarial re-check of every cited claim) and a
+  narrative/assembly agent (§1-14 + final JSON merge). Each is restricted
+  to the four read-only tools above and instructed to cite every claim.
+- **`.github/skills/`** — reusable, versioned procedures the agents share:
+  citation discipline, the ROIIC calculation, the QGLP 0-3 scoring rubric,
+  the 7-gate understandability checklist, and the exact dossier JSON
+  schema `validate_dossier` expects.
+- **The `artha-dossier` factory** (registered by the extension via
+  `defineFactory`) — `args: {ticker, snapshot_id, track}`, fans out one
+  subagent per framework section, runs the adversarial citation-verify
+  pass, then assembles. Limits match `BudgetConfig`'s defaults
+  (`maxConcurrentSubagents: 5`, `maxTotalSubagents: 20`, `maxAiCredits: 5`,
+  `timeoutSeconds: 3600`).
+
+```powershell
+# The read-only tool surface, callable directly for testing:
+.venv\Scripts\artha agent-tools get-candidate ALPHA --snapshot-id <id>
+.venv\Scripts\artha agent-tools get-filing-chunk ALPHA_Q1FY25 1
+.venv\Scripts\artha agent-tools list-candidate-chunks ALPHA --topic pledge
+echo '{"identity": {...}, ...}' | .venv\Scripts\artha agent-tools validate-dossier
+echo '{"identity": {...}, ...}' | .venv\Scripts\artha agent-tools write-dossier --run-id run-001
+```
+
+**Scope boundary:** Phase 3a builds and verifies the harness — the
+extension loads, all four tools work end-to-end (verified against the
+running Copilot session, not just pytest), and the factory registers with
+the correct argument schema and limits. It deliberately does **not** run a
+real dossier generation end to end — that is Phase 3's exit criterion
+("20+ dossiers that pass their own completeness checks"), and running the
+full fan-out for real spends real AI credits across ~12 subagent calls per
+dossier, which belongs to a phase whose job is producing real dossiers, not
+building the plumbing.
+
 ### Setup
 
 ```powershell
@@ -158,6 +203,23 @@ Copy-Item config\ips.template.md config\ips.md
       matching implementation_plan.md §16 Q1's "both" resolution
 - [ ] First real dossier generated end-to-end (Phase 3 — needs Phase 3a's
       agent harness)
+
+### Phase 3a exit criteria (implementation_plan.md §3-§4)
+
+- [x] Project extension exposes the read-only tool surface
+      (`get_filing_chunk`, `get_candidate`, `list_candidate_chunks`,
+      `validate_dossier`); verified loading cleanly and each tool working
+      end-to-end against real ingested test data
+- [x] One custom agent per framework section (§15-24) plus a citation
+      verifier and a narrative/assembly agent, each restricted to the
+      read-only tool surface
+- [x] Skills for the shared, reusable procedures (citation discipline,
+      ROIIC, QGLP rubric, understandability checklist, dossier JSON schema)
+- [x] `artha-dossier` factory registered with a declared `argsSchema` and
+      limits matching `BudgetConfig`'s defaults; verified via
+      `factories_manage inspect`
+- [ ] Full end-to-end dossier generation (Phase 3 — this phase builds the
+      harness, Phase 3 runs it for real candidates)
 
 ### Credentials
 
