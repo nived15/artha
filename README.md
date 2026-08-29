@@ -235,11 +235,21 @@ Copy-Item config\ips.template.md config\ips.md
       the real 1104-row Profile 1 snapshot above (Track A: 0 shortlisted,
       909 excluded, 195 pending Stage 1b data; Track B: 0 shortlisted, 1104
       excluded by the Greenblatt/Pabrai hard blocks)
-- [ ] Fill in the remaining `config/screener_field_map.toml` Phase 2 fields
-      (`ocf_to_pat`, `profit_growth_5y`, etc.) against a real export so the
-      screens run on complete data rather than reporting "pending" — not
-      part of §13.4's required-field set, and the current real exports
-      don't include these columns yet
+- [x] Phase 2 field-map columns (`current_ratio`, `price_to_book`,
+      `profit_growth_5y`, `eps_growth_ttm_yoy`, `eps_growth_latest_q_yoy`,
+      `interest_coverage`, `fcf_conversion_pct`, `dividend_yield_pct`,
+      `sector`) confirmed against a real 654-row export
+      (`screener_exports/financial-services.csv`, 2026-08-30) at 72.8-100%
+      completeness; verified end-to-end via `artha agent-tools
+      get-candidate` and re-running `artha screen` against it. Four fields
+      remain genuinely unconfirmed and stay `<TODO>` rather than being
+      guessed at: `ocf_to_pat` and `gross_margin` (no matching native or
+      derivable column), `years_since_incorporation` (not a Screener
+      field), and `analyst_coverage_count` (the export's own `Expected
+      quarterly EPS` sparsity is the low-coverage signal per plan.md
+      §13.3b, but its value is an EPS estimate, not a count, so it can't
+      be mapped directly without corrupting the `<= 2` threshold check in
+      `track_b.py`)
 
 ### Phase 2.5 exit criteria (implementation_plan.md §3)
 
