@@ -4,7 +4,7 @@ Wealth pursued through sound, disciplined means.
 
 See [`plan.md`](plan.md) for the full specification and
 [`implementation_plan.md`](implementation_plan.md) for the build sequence and
-architecture. This README covers Phases 0-2.
+architecture. This README covers Phases 0-2.5.
 
 ## Phase 0 — foundations
 
@@ -65,6 +65,33 @@ explainability, promoter aspiration) are reported as `needs_stage_1b` /
 .venv\Scripts\artha screen --source screener_profile1 --track B
 ```
 
+## Phase 2.5 — dossier schema + validator
+
+The 24-section dossier data model (`artha/dossier/schema.py`), a
+completeness + citation-presence validator that rejects rather than warns
+(`artha/dossier/validator.py`), a markdown renderer matching plan.md §6's
+section layout, and storage that writes the immutable markdown artifact
+to `dossiers/<ticker>/<run_id>.md` plus a queryable SQLite index row
+(implementation_plan.md §16 Q1). This is a library only — no LLM
+dependency, no CLI wiring yet. Phase 3a's agent harness and Phase 3's
+factory will be the first callers, writing into this exact contract:
+
+```python
+from artha.dossier.storage import write_dossier
+from artha.dossier.validator import validate_dossier
+
+result = write_dossier(conn, dossier, run_id="run-001")
+result.validation.passed   # False rejects, listing every defect by section
+```
+
+Sections 12 (disconfirming evidence) and 14 (provenance) are checked as
+the plan's own "anti-self-deception mechanism"; the two gate sections (15
+moat/understandability, 18 integrity) are checked as gates, not just
+evidence — a `passed=False` gate is itself a validation error, distinct
+from a missing/incomplete section. Track-conditional sections (19 Davis,
+22 Terry Smith, 24 CANSLIM) are typed `X | None` so "not applicable to
+this track" and "applicable but missing" are never conflated.
+
 ### Setup
 
 ```powershell
@@ -119,6 +146,18 @@ Copy-Item config\ips.template.md config\ips.md
 - [ ] Fill in the remaining `config/screener_field_map.toml` Phase 2 fields
       (`ocf_to_pat`, `profit_growth_5y`, etc.) against a real export so the
       screens run on complete data rather than reporting "pending"
+
+### Phase 2.5 exit criteria (implementation_plan.md §3)
+
+- [x] Dossier schema covers all 24 mandatory sections plus the two gates
+- [x] Validator rejects (never warns) on missing sections, empty
+      disconfirming-evidence/provenance, missing citations on evidence
+      sections, a failed gate, or a track-conditional section in the
+      wrong state
+- [x] Storage writes the immutable markdown file + SQLite index row,
+      matching implementation_plan.md §16 Q1's "both" resolution
+- [ ] First real dossier generated end-to-end (Phase 3 — needs Phase 3a's
+      agent harness)
 
 ### Credentials
 

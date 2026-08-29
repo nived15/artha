@@ -96,6 +96,34 @@ _MIGRATIONS: list[tuple[int, str, str]] = [
         );
         """,
     ),
+    (
+        3,
+        "phase2_5_dossier_index",
+        """
+        -- Queryable index over the immutable dossiers/<ticker>/<run_id>.md
+        -- files (implementation_plan.md §16 Q1) — the markdown is the
+        -- artifact of record; this table is a read-optimized mirror.
+        CREATE TABLE IF NOT EXISTS dossiers (
+            run_id                  TEXT PRIMARY KEY,
+            ticker                   TEXT NOT NULL,
+            track                    TEXT NOT NULL,
+            arithmetic_profile       TEXT NOT NULL,
+            snapshot_id              TEXT NOT NULL REFERENCES snapshots (snapshot_id),
+            stage                    TEXT NOT NULL,   -- e.g. 'draft', 'gate1_approved', 'gate1_rejected'
+            file_path                TEXT NOT NULL,
+            factory_run_id           TEXT,
+            agent_skill_commit_sha   TEXT,
+            model                    TEXT,
+            validation_passed        INTEGER NOT NULL,  -- 0/1
+            validation_errors_json   TEXT NOT NULL,
+            scores_json              TEXT NOT NULL,      -- QGLP combined, downside-floor, asymmetry ratio, etc.
+            gates_json               TEXT NOT NULL,       -- moat/understandability + integrity gate outcomes
+            created_at               TEXT NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_dossiers_ticker ON dossiers (ticker, created_at);
+        """,
+    ),
 ]
 
 
