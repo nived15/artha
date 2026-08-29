@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import dataclasses
+
 import pytest
 
 from artha.dossier.schema import (
@@ -111,3 +113,40 @@ def valid_dossier_track_a() -> Dossier:
 @pytest.fixture
 def valid_dossier_track_b() -> Dossier:
     return make_valid_dossier("B")
+
+
+def dossier_to_dict(dossier: Dossier) -> dict:
+    """Convert a Dossier to a plain dict (mirrors an agent's structured
+    JSON tool-call output) for round-trip/CLI tests."""
+
+    def section(s):
+        if s is None:
+            return None
+        return {"title": s.title, "content": s.content, "citations": [dataclasses.asdict(c) for c in s.citations]}
+
+    return {
+        "identity": dataclasses.asdict(dossier.identity),
+        "business_five_sentences": section(dossier.business_five_sentences),
+        "why_now": section(dossier.why_now),
+        "three_things_must_be_true": section(dossier.three_things_must_be_true),
+        "financial_evidence": section(dossier.financial_evidence),
+        "fatal_flaw_checklist": section(dossier.fatal_flaw_checklist),
+        "valuation": section(dossier.valuation),
+        "buy_below_and_sizing": section(dossier.buy_below_and_sizing),
+        "pre_mortem": section(dossier.pre_mortem),
+        "kill_triggers": section(dossier.kill_triggers),
+        "what_would_make_me_add_more": section(dossier.what_would_make_me_add_more),
+        "holding_period_and_tax": section(dossier.holding_period_and_tax),
+        "disconfirming_evidence": section(dossier.disconfirming_evidence),
+        "provenance": dataclasses.asdict(dossier.provenance),
+        "moat_understandability_gate": dataclasses.asdict(dossier.moat_understandability_gate),
+        "qglp_scorecard": dataclasses.asdict(dossier.qglp_scorecard),
+        "margin_of_safety_scuttlebutt": section(dossier.margin_of_safety_scuttlebutt),
+        "integrity_gate": dataclasses.asdict(dossier.integrity_gate),
+        "scale_economies_shared": section(dossier.scale_economies_shared),
+        "magic_formula_attribution": section(dossier.magic_formula_attribution),
+        "conviction_sizing": section(dossier.conviction_sizing),
+        "davis_double_play": section(dossier.davis_double_play),
+        "quality_compounding_checklist": section(dossier.quality_compounding_checklist),
+        "canslim_notes": section(dossier.canslim_notes),
+    }

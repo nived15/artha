@@ -9,6 +9,7 @@ documented, but they refuse to run until their phase lands.
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -17,10 +18,13 @@ import click
 from artha import __version__
 from artha.config import AppConfig, BenchmarkConfig, ConfigError, IPSConfig, load_config
 from artha.data.field_map import load_field_map
-from artha.data.filings import get_chunk, ingest_filing_from_file
+from artha.data.filings import get_chunk, ingest_filing_from_file, list_chunks
 from artha.data.screener_import import ingest_and_validate
 from artha.data.snapshot import StaleSnapshotError, assert_not_stale, get_snapshot, latest_snapshot, load_rows
 from artha.db import apply_migrations, connect, current_schema_version
+from artha.dossier.serialization import DossierSchemaError, dossier_from_dict
+from artha.dossier.storage import write_dossier
+from artha.dossier.validator import validate_dossier
 from artha.journal import Journal
 from artha.screening.loader import build_company_records
 from artha.screening.pipeline import screen_track_a, screen_track_b
@@ -302,6 +306,179 @@ def _load_config_or_default(config_path: str) -> AppConfig:
     except ConfigError as exc:
         click.echo(f"warning: {exc}\n(using defaults — copy config/artha.example.toml to {config_path} first)", err=True)
         return AppConfig(ips=IPSConfig(statement_path=""), benchmark=BenchmarkConfig("", "", "", ""))
+
+
+@cli.group("agent-tools")
+def agent_tools() -> None:
+    """Read-only JSON query surface for the Phase 3a agent harness.
+
+    These commands are what .github/extensions/artha-tools/extension.mjs
+    shells out to — the actual Copilot-facing tools (get_filing_chunk,
+    get_candidate, list_candidate_chunks, validate_dossier) are thin
+    JSON-in/JSON-out wrappers over these. Kept as plain CLI commands (not
+    a long-running server) so the extension can invoke them per-call
+    without managing any daemon lifecycle.
+    """
+
+
+@agent_tools.command("get-candidate")
+@click.argument("ticker")
+@click.option("--snapshot-id", default=None, help="Look up within this exact snapshot (matches implementation_plan.md §4's get_candidate(ticker, snapshot_id) tool signature).")
+@click.option("--source", default=None, help="Alternative to --snapshot-id: resolve the latest snapshot for this source label.")
+@click.option("--profile", default="profile_1_standard", show_default=True)
+@click.option("--config", "config_path", default=DEFAULT_CONFIG_PATH, show_default=True)
+def agent_tools_get_candidate(ticker: str, snapshot_id: str | None, source: str | None, profile: str, config_path: str) -> None:
+    """Print one candidate's resolved Stage 1a fields as JSON."""
+    if not snapshot_id and not source:
+        click.echo(json.dumps({"error": "one of --snapshot-id or --source is required"}))
+        sys.exit(1)
+
+    app_config = _load_config_or_default(config_path)
+    conn = connect(app_config.db_path)
+    try:
+        apply_migrations(conn)
+        record = get_snapshot(conn, snapshot_id) if snapshot_id else latest_snapshot(conn, source)
+        if record is None:
+            click.echo(json.dumps({"error": f"no snapshot found for source={source!r} snapshot_id={snapshot_id!r}"}))
+            sys.exit(1)
+        rows = load_rows(record)
+        field_map = load_field_map(app_config.data.field_map_path, profile)
+        candidates = build_company_records(rows, field_map, arithmetic_profile=profile)
+    finally:
+        conn.close()
+
+    match = next((c for c in candidates if c.ticker == ticker), None)
+    if match is None:
+        click.echo(json.dumps({"error": f"ticker {ticker!r} not found in snapshot {record.snapshot_id}"}))
+        sys.exit(1)
+    click.echo(json.dumps({"ticker": match.ticker, "arithmetic_profile": match.arithmetic_profile, "snapshot_id": record.snapshot_id, "fields": match.fields}))
+
+
+@agent_tools.command("get-filing-chunk")
+@click.argument("doc_id")
+@click.argument("page", type=int)
+@click.option("--chunk-index", default=0, show_default=True)
+@click.option("--config", "config_path", default=DEFAULT_CONFIG_PATH, show_default=True)
+def agent_tools_get_filing_chunk(doc_id: str, page: int, chunk_index: int, config_path: str) -> None:
+    """Print one (doc_id, page, chunk_index) citation chunk as JSON."""
+    app_config = _load_config_or_default(config_path)
+    conn = connect(app_config.db_path)
+    try:
+        chunk = get_chunk(conn, doc_id, page, chunk_index)
+    finally:
+        conn.close()
+    if chunk is None:
+        click.echo(json.dumps({"error": f"no such chunk: ({doc_id}, page={page}, chunk_index={chunk_index})"}))
+        sys.exit(1)
+    click.echo(json.dumps({"doc_id": chunk.doc_id, "page": chunk.page, "chunk_index": chunk.chunk_index, "text": chunk.text, "sha256": chunk.sha256}))
+
+
+@agent_tools.command("list-candidate-chunks")
+@click.argument("ticker")
+@click.option("--topic", default=None, help="Case-insensitive substring filter over chunk text.")
+@click.option("--config", "config_path", default=DEFAULT_CONFIG_PATH, show_default=True)
+def agent_tools_list_candidate_chunks(ticker: str, topic: str | None, config_path: str) -> None:
+    """List citation chunks for every filing ingested under TICKER, as JSON."""
+    app_config = _load_config_or_default(config_path)
+    conn = connect(app_config.db_path)
+    try:
+        doc_ids = [row["doc_id"] for row in conn.execute("SELECT doc_id FROM filings WHERE ticker = ?", (ticker,)).fetchall()]
+        chunks = []
+        for doc_id in doc_ids:
+            for chunk in list_chunks(conn, doc_id):
+                if topic is None or topic.lower() in chunk.text.lower():
+                    chunks.append({"doc_id": chunk.doc_id, "page": chunk.page, "chunk_index": chunk.chunk_index, "text": chunk.text})
+    finally:
+        conn.close()
+    click.echo(json.dumps({"ticker": ticker, "chunks": chunks}))
+
+
+@agent_tools.command("validate-dossier")
+def agent_tools_validate_dossier() -> None:
+    """Validate a dossier draft (JSON on stdin) without writing it. Prints JSON {passed, errors}."""
+    try:
+        draft = json.loads(sys.stdin.read())
+        dossier = dossier_from_dict(draft)
+    except (json.JSONDecodeError, DossierSchemaError) as exc:
+        click.echo(json.dumps({"passed": False, "errors": [{"section": "draft", "reason": str(exc)}]}))
+        sys.exit(1)
+
+    result = validate_dossier(dossier)
+    click.echo(json.dumps({"passed": result.passed, "errors": [{"section": e.section, "reason": e.reason} for e in result.errors]}))
+    if not result.passed:
+        sys.exit(1)
+
+
+@agent_tools.command("write-dossier")
+@click.option("--run-id", required=True)
+@click.option("--dossiers-root", default="dossiers", show_default=True)
+@click.option("--stage", default="draft", show_default=True)
+@click.option("--factory-run-id", default=None)
+@click.option("--agent-skill-commit-sha", default=None)
+@click.option("--model", default=None)
+@click.option("--config", "config_path", default=DEFAULT_CONFIG_PATH, show_default=True)
+def agent_tools_write_dossier(
+    run_id: str,
+    dossiers_root: str,
+    stage: str,
+    factory_run_id: str | None,
+    agent_skill_commit_sha: str | None,
+    model: str | None,
+    config_path: str,
+) -> None:
+    """Validate, write, and index a dossier draft (JSON on stdin). Prints JSON result.
+
+    This is the factory's own write step, not an agent-callable tool — the
+    extension's read-only tool surface never exposes a write path.
+    """
+    try:
+        draft = json.loads(sys.stdin.read())
+        dossier = dossier_from_dict(draft)
+    except (json.JSONDecodeError, DossierSchemaError) as exc:
+        click.echo(json.dumps({"error": str(exc)}))
+        sys.exit(1)
+
+    app_config = _load_config_or_default(config_path)
+    conn = connect(app_config.db_path)
+    try:
+        apply_migrations(conn)
+        result = write_dossier(
+            conn,
+            dossier,
+            run_id=run_id,
+            dossiers_root=dossiers_root,
+            stage=stage,
+            factory_run_id=factory_run_id,
+            agent_skill_commit_sha=agent_skill_commit_sha,
+            model=model,
+        )
+        Journal(conn).append(
+            event_type="dossier_written",
+            entity_type="dossier",
+            entity_id=run_id,
+            payload={
+                "ticker": dossier.identity.ticker,
+                "track": dossier.identity.track,
+                "validation_passed": result.validation.passed,
+                "errors": [{"section": e.section, "reason": e.reason} for e in result.validation.errors],
+                "file_path": result.file_path,
+            },
+        )
+    finally:
+        conn.close()
+
+    click.echo(
+        json.dumps(
+            {
+                "run_id": result.run_id,
+                "file_path": result.file_path,
+                "validation_passed": result.validation.passed,
+                "errors": [{"section": e.section, "reason": e.reason} for e in result.validation.errors],
+            }
+        )
+    )
+    if not result.validation.passed:
+        sys.exit(1)
 
 
 @cli.command()
