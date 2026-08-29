@@ -19,9 +19,11 @@ from artha.config import AppConfig, BenchmarkConfig, ConfigError, IPSConfig, loa
 from artha.data.field_map import load_field_map
 from artha.data.filings import get_chunk, ingest_filing_from_file
 from artha.data.screener_import import ingest_and_validate
-from artha.data.snapshot import StaleSnapshotError, assert_not_stale, get_snapshot
+from artha.data.snapshot import StaleSnapshotError, assert_not_stale, get_snapshot, latest_snapshot, load_rows
 from artha.db import apply_migrations, connect, current_schema_version
 from artha.journal import Journal
+from artha.screening.loader import build_company_records
+from artha.screening.pipeline import screen_track_a, screen_track_b
 from artha.secrets import SecretNotFoundError, delete_secret, has_secret, set_secret
 
 DEFAULT_CONFIG_PATH = "config/artha.toml"
@@ -303,9 +305,69 @@ def _load_config_or_default(config_path: str) -> AppConfig:
 
 
 @cli.command()
-def screen() -> None:
-    """Run the Track A/B screening pipeline. (Phase 2 — not yet built.)"""
-    _not_implemented("Phase 2 (screening + hard blocks)")
+@click.option("--source", required=True, help="Snapshot source label, e.g. 'screener_profile1' (matches import-screener).")
+@click.option("--profile", default="profile_1_standard", show_default=True, help="§5.3a arithmetic profile name.")
+@click.option("--track", type=click.Choice(["A", "B"]), required=True)
+@click.option("--config", "config_path", default=DEFAULT_CONFIG_PATH, show_default=True)
+def screen(source: str, profile: str, track: str, config_path: str) -> None:
+    """Run the Track A/B Stage 1+2 screening pipeline over the latest ingested snapshot."""
+    app_config = _load_config_or_default(config_path)
+    conn = connect(app_config.db_path)
+    try:
+        apply_migrations(conn)
+        record = latest_snapshot(conn, source)
+        if record is None:
+            click.echo(f"no snapshot found for source={source}; run 'artha data import-screener' first.", err=True)
+            sys.exit(1)
+        try:
+            assert_not_stale(record, app_config.data.snapshot_max_age_days)
+        except StaleSnapshotError as exc:
+            click.echo(str(exc), err=True)
+            sys.exit(1)
+
+        rows = load_rows(record)
+        field_map = load_field_map(app_config.data.field_map_path, profile)
+        company_records = build_company_records(rows, field_map, arithmetic_profile=profile)
+
+        results = screen_track_a(company_records) if track == "A" else screen_track_b(company_records)
+        shortlist = [c for c in results if not c.excluded and c.cleared_stage1]
+        excluded = [c for c in results if c.excluded]
+        pending = [c for c in results if not c.excluded and not c.cleared_stage1]
+
+        Journal(conn).append(
+            event_type="screen_run",
+            entity_type="snapshot",
+            entity_id=record.snapshot_id,
+            payload={
+                "track": track,
+                "source": source,
+                "profile": profile,
+                "universe_size": len(company_records),
+                "shortlist_size": len(shortlist),
+                "shortlist": [c.ticker for c in shortlist],
+                "exclusions": {c.ticker: list(c.exclusion_reasons) for c in excluded},
+                "pending_insufficient_data": {c.ticker: list(c.insufficient_data_fields) for c in pending},
+            },
+        )
+    finally:
+        conn.close()
+
+    click.echo(
+        f"universe: {len(company_records)}  shortlist: {len(shortlist)}  "
+        f"excluded: {len(excluded)}  pending (insufficient Stage 1a data): {len(pending)}"
+    )
+    click.echo("shortlist:")
+    for c in shortlist:
+        rank_note = f" (Greenblatt combined-rank percentile={c.greenblatt.percentile:.1f})" if c.greenblatt else ""
+        click.echo(f"  {c.ticker}{rank_note}")
+    if excluded:
+        click.echo("excluded (rule attributed):")
+        for c in excluded:
+            click.echo(f"  {c.ticker}: {'; '.join(c.exclusion_reasons)}")
+    if pending:
+        click.echo("pending — insufficient Stage 1a data (not excluded, not shortlisted):")
+        for c in pending:
+            click.echo(f"  {c.ticker}: missing {list(c.insufficient_data_fields)}")
 
 
 @cli.command()
