@@ -1,0 +1,42 @@
+# Artha config template.
+#
+# Copy this file to config/artha.toml, fill in real values, and freeze the
+# IPS and benchmark before the first purchase (plan.md §9, §11 Phase 0).
+# config/artha.toml is gitignored on purpose — it will hold your real,
+# personal values.
+
+db_path = ".artha/artha.db"
+
+[ips]
+# Path to your written Investment Policy Statement (see config/ips.template.md).
+statement_path = "config/ips.md"
+# Leave unset (or commented out) until you have actually frozen it.
+# frozen_on = "2025-01-15"
+
+[benchmark]
+# plan.md §9: a named Nifty 50 TR index fund + one named factor fund,
+# fixed weights, recorded by name — never changed once frozen.
+index_fund_name = "<TODO: e.g. UTI Nifty 50 Index Fund>"
+index_fund_isin = "<TODO: ISIN>"
+factor_fund_name = "<TODO: e.g. a Nifty Momentum 30 or Quality 30 index fund>"
+factor_fund_isin = "<TODO: ISIN>"
+# frozen_on = "2025-01-15"
+
+[sizing]
+# plan.md §4 cross-cutting hard limits. Defaults below match the plan;
+# override only if your IPS deliberately sets something different.
+track_a_position_pct = 0.025
+track_b_position_pct = 0.0125
+max_single_name_pct = 0.25
+max_sector_pct = 0.30
+max_smallcap_pct = 0.35
+track_b_sleeve_cap_pct = 0.40
+active_sleeve_start_pct = 0.05
+
+[budget]
+# Per-dossier Agent Factory ceilings (implementation_plan.md §16 Q5).
+# Soft/post-paid — log actual spend regardless (see artha.journal).
+max_ai_credits_per_dossier = 5.0
+max_concurrent_subagents = 5
+max_total_subagents = 20
+timeout_seconds = 3600
