@@ -40,6 +40,62 @@ _MIGRATIONS: list[tuple[int, str, str]] = [
             ON journal (entity_type, entity_id);
         """,
     ),
+    (
+        2,
+        "phase1_data_spine",
+        """
+        -- Content-addressable snapshot store (implementation_plan.md §16 Q6):
+        -- snapshot_id is the sha256 of the raw exported file, so identical
+        -- exports dedupe automatically and every dossier can cite an exact,
+        -- immutable snapshot.
+        CREATE TABLE IF NOT EXISTS snapshots (
+            snapshot_id    TEXT PRIMARY KEY,   -- sha256 hex of the raw file
+            source         TEXT NOT NULL,      -- e.g. 'screener_profile1'
+            profile        TEXT,               -- §5.3a arithmetic profile name, if any
+            file_path      TEXT NOT NULL,      -- path under data.snapshot_dir
+            captured_at    TEXT NOT NULL,      -- ISO date the export was taken (provenance)
+            ingested_at    TEXT NOT NULL,      -- ISO datetime this row was written
+            row_count      INTEGER NOT NULL,
+            column_count   INTEGER NOT NULL
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_snapshots_source
+            ON snapshots (source, captured_at);
+
+        -- Per-field completeness stats for a snapshot (§13.4(d) smallcap
+        -- completeness check) — one row per canonical field name.
+        CREATE TABLE IF NOT EXISTS snapshot_fields (
+            snapshot_id       TEXT NOT NULL REFERENCES snapshots (snapshot_id),
+            field_name        TEXT NOT NULL,
+            non_null_count    INTEGER NOT NULL,
+            total_count       INTEGER NOT NULL,
+            completeness_pct  REAL NOT NULL,
+            PRIMARY KEY (snapshot_id, field_name)
+        );
+
+        -- Filing-level provenance (doc_id -> source file, ticker, hash).
+        CREATE TABLE IF NOT EXISTS filings (
+            doc_id       TEXT PRIMARY KEY,
+            source_path  TEXT NOT NULL,
+            ticker       TEXT,
+            doc_type     TEXT,
+            captured_at  TEXT NOT NULL,
+            ingested_at  TEXT NOT NULL,
+            sha256       TEXT NOT NULL
+        );
+
+        -- Citation-preserving chunk store: (doc_id, page, text) so every
+        -- dossier claim can cite an exact (doc_id, page) — plan.md §6.
+        CREATE TABLE IF NOT EXISTS filing_chunks (
+            doc_id       TEXT NOT NULL REFERENCES filings (doc_id),
+            page         INTEGER NOT NULL,
+            chunk_index  INTEGER NOT NULL,
+            text         TEXT NOT NULL,
+            sha256       TEXT NOT NULL,
+            PRIMARY KEY (doc_id, page, chunk_index)
+        );
+        """,
+    ),
 ]
 
 

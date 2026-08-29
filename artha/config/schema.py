@@ -113,6 +113,34 @@ class BudgetConfig:
 
 
 @dataclass(frozen=True)
+class DataConfig:
+    """Data-spine settings (plan.md §13.4/§13.6, implementation_plan.md Phase 1).
+
+    Screener.in Premium's CSV export is human-triggered (§13.6) and capped
+    at 50 columns per query (§13.4a). A snapshot's *age* is part of its
+    provenance (§5.5) — the staleness guard refuses to build a dossier from
+    a snapshot older than snapshot_max_age_days.
+    """
+
+    snapshot_dir: str = ".artha/snapshots"
+    snapshot_max_age_days: int = 100  # ~1 quarter + buffer; §13.6 cadence is 2-4x/year
+    max_export_columns: int = 50      # §13.4a's binding column ceiling
+    field_map_path: str = "config/screener_field_map.toml"
+
+    def validate(self) -> list[str]:
+        problems: list[str] = []
+        if not self.snapshot_dir.strip():
+            problems.append("data.snapshot_dir must not be empty")
+        if self.snapshot_max_age_days <= 0:
+            problems.append("data.snapshot_max_age_days must be > 0")
+        if self.max_export_columns <= 0:
+            problems.append("data.max_export_columns must be > 0")
+        if not self.field_map_path.strip():
+            problems.append("data.field_map_path must not be empty")
+        return problems
+
+
+@dataclass(frozen=True)
 class AppConfig:
     """The fully resolved, validated application config."""
 
@@ -120,6 +148,7 @@ class AppConfig:
     benchmark: BenchmarkConfig
     sizing: SizingLimits = field(default_factory=SizingLimits)
     budget: BudgetConfig = field(default_factory=BudgetConfig)
+    data: DataConfig = field(default_factory=DataConfig)
     db_path: str = ".artha/artha.db"
 
     def validate(self) -> list[str]:
@@ -128,6 +157,7 @@ class AppConfig:
         problems += self.benchmark.validate()
         problems += self.sizing.validate()
         problems += self.budget.validate()
+        problems += self.data.validate()
         if not self.db_path.strip():
             problems.append("db_path must not be empty")
         return problems

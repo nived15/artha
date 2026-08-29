@@ -10,6 +10,7 @@ from artha.config.schema import (
     BenchmarkConfig,
     BudgetConfig,
     ConfigError,
+    DataConfig,
     IPSConfig,
     SizingLimits,
 )
@@ -49,6 +50,7 @@ def load_config(path: str | Path) -> AppConfig:
     )
     sizing = SizingLimits(**raw.get("sizing", {}))
     budget = BudgetConfig(**raw.get("budget", {}))
+    data = DataConfig(**raw.get("data", {}))
     db_path = raw.get("db_path", ".artha/artha.db")
 
     config = AppConfig(
@@ -56,6 +58,7 @@ def load_config(path: str | Path) -> AppConfig:
         benchmark=benchmark,
         sizing=sizing,
         budget=budget,
+        data=data,
         db_path=db_path,
     )
 
