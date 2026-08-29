@@ -1,0 +1,51 @@
+MODI NATURALS LIMITED (NSE: MODINATUR)
+Financial highlights and Stage 1a reconciliation
+
+Source: Stage 1a Screener snapshot (screener_exports/artha-profile-1-validation.csv,
+captured 2026-08-30) plus secondary web research (screener.in, Economic
+Times quarterly results, Moneycontrol, Business Standard). Captured
+2026-08-30.
+
+STAGE 1A SNAPSHOT FIGURES (screener_profile1, snapshot_id
+a0d7e35e3abb34602e52ac01075992c76e302178919722d74cb3769f8ad75198):
+Market Capitalization Rs 463.00 crore; Return on Capital Employed (ROCE)
+22.18%; Return on Equity (ROE) 30.23%; Debt-to-Equity 0.94; Operating
+Profit Margin (OPM) 10.84%; 3-year sales growth 19.85%; 3-year profit
+growth 248.36%; Price-to-Earning (P/E) 9.52x; Artha PEG 0.04; Promoter
+holding 69.09%; Promoter pledge 0.00%; 3-year promoter-holding trend +1.59
+(rising, not declining).
+
+SECONDARY-SOURCE FIGURES (screener.in / stockanalysis.com / Yahoo Finance):
+Market Cap reported in a Rs 465-490 crore range (consistent with the Stage
+1a figure); Share price range Rs 347-367; 52-week range Rs 252.30-524.80
+(a wide range, implying meaningful price volatility over the trailing
+year); PE (TTM) approximately 8.8-9.4x (consistent with the Stage 1a
+figure); EPS (TTM) approximately Rs 39.3; Book value approximately
+Rs 129-138/share; FY2026 revenue approximately Rs 719 crore (8.5% YoY
+growth); FY2026 net income approximately Rs 52.3 crore, described as a
+"significant YoY increase"; ROE approximately 29.2%, described as
+outperforming the company's own 5-year average (consistent with the Stage
+1a ROE of 30.23%); Debt-to-equity approximately 0.94 (consistent with the
+Stage 1a figure -- "manageable" for an FMCG/agri-processing business
+model, though not negligible the way GGBL's or Kothari's D/E is).
+
+GROWTH-QUALITY CAVEAT (the specific concern flagged in this research pass
+and cross-referenced in the Ecoreco dossier considered in the same
+session): the Stage 1a 3-year profit growth figure (248.36%) is very high
+relative to the much more moderate 3-year sales growth figure (19.85%) --
+this combination (profit growing far faster than sales) is a classic
+low-base-effect or margin-expansion-from-a-depressed-prior-year pattern,
+and should NOT be read as "profits compounding at 248%/year going
+forward." The company's own quarterly revenue trend (financial highlights,
+business overview document) shows a genuinely mixed, not smoothly
+compounding, sequential pattern (Rs 189.9cr to Rs 155.0cr to Rs 147.0cr to
+Rs 174.1cr to Rs 243.1cr across five quarters) -- this is the concrete,
+cited evidence behind the caution, not a generic disclaimer.
+
+NOT AVAILABLE in this Profile 1 snapshot: OCF/PAT, gross margin (distinct
+from OPM), interest coverage, FCF conversion %, current ratio,
+price-to-book (a secondary-sourced book-value figure exists but was not
+cross-computed against price to confirm P/B), and a verified 5-year PAT
+CAGR distinguishing genuine trend growth from the single-year base effect
+flagged above. Dividend yield: secondary sources report 0% (no dividend
+currently paid).

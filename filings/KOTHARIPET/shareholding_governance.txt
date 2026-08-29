@@ -1,0 +1,51 @@
+KOTHARI PETROCHEMICALS LIMITED (NSE: KOTHARIPET)
+Shareholding and governance notes
+
+Source: web research synthesizing Trendlyne's shareholding-pattern page,
+the company's own investor-relations page (kotharipetrochemicals.com),
+and NSE's archived annual-report filing. Captured via web research on
+2026-08-30.
+
+PROMOTER SHAREHOLDING: Promoter holding has remained steady at
+approximately 72.2% across quarters from June 2025 through June 2026 (per
+Trendlyne's shareholding-pattern tracker). Pledged shares are reported at
+0.0% for all recent quarters -- no promoter shares are pledged, and no new
+pledges or encumbrances were reported in FY2025. This is consistent with
+the Stage 1a snapshot's own promoter_pledge_pct=0.0 and a modestly rising
+(+1.24) 3-year holding trend.
+
+GROUP AFFILIATION: Kothari Petrochemicals is described as part of the H C
+Kothari Group, a long-established Indian industrial group -- distinct from
+a first-generation promoter-founder company (like GGBL or Virtual Galaxy in
+this same research batch), this is an established group-company structure
+with a multi-decade operating and listing history.
+
+RELATED PARTY TRANSACTIONS AND AUDITOR: the company's FY2024-25 Annual
+Report (publicly available as a PDF via both the company's own investor-
+relations page and NSE's archive, archives.nseindia.com) is stated to
+contain a dedicated "Notes Forming Part of Financial Statements" section
+covering related-party transactions, management remuneration, and board
+details. This research pass located the existence and URL of this primary
+document but did NOT independently read its related-party-transaction
+tables or confirm the statutory auditor's name/tenure/opinion status line
+by line -- these specific governance facts are reported as unverified
+(location known, content not independently parsed) rather than assumed
+clean.
+
+SEBI / REGULATORY FLAGS: no SEBI show-cause order, adverse
+related-party-transaction finding, or auditor resignation was found
+referenced in the sources consulted for this research pass. As with the
+other candidates in this batch, this is an absence of finding in general
+public/financial-portal research, not an exhaustive review of SEBI's
+enforcement database or the company's full multi-decade exchange-filing
+history.
+
+DIVIDEND-PAYING TRACK RECORD AS A GOVERNANCE SIGNAL: a company that
+consistently pays out cash dividends (interim Rs 1.00/share Aug 2025,
+final Rs 1.00/share Jul 2024, 5-year dividend growth ~28.47% per
+investing.com) provides a weak but real corroborating signal of genuine,
+cash-backed (not purely accrual) profitability, since dividends must be
+funded from actual distributable cash reserves -- this is noted as a
+partial, non-conclusive cross-check on earnings quality, not a substitute
+for an independently verified OCF/PAT figure (which remains unavailable,
+per the financial-highlights document).
