@@ -63,6 +63,14 @@ explainability, promoter aspiration) are reported as `needs_stage_1b` /
 ```powershell
 .venv\Scripts\artha screen --source screener_profile1 --track A
 .venv\Scripts\artha screen --source screener_profile1 --track B
+
+# Every screen run is persisted to a queryable screen_results table (not
+# just printed and journaled) -- list past runs and re-list a shortlist
+# without re-running the screen:
+.venv\Scripts\artha screen-results list-runs
+.venv\Scripts\artha screen-results show <screen_run_id> --status shortlisted
+.venv\Scripts\artha screen-results show <screen_run_id> --status excluded
+.venv\Scripts\artha screen-results show <screen_run_id> --status pending
 ```
 
 ## Phase 2.5 — dossier schema + validator
@@ -299,6 +307,12 @@ Copy-Item config\ips.template.md config\ips.md
       §13.3b, but its value is an EPS estimate, not a count, so it can't
       be mapped directly without corrupting the `<= 2` threshold check in
       `track_b.py`)
+- [x] Screen results (shortlist/excluded/pending, one row per candidate,
+      including exclusion reasons and Greenblatt rank) persist to a
+      queryable `screen_results` table, not just the CLI's console output
+      and one `screen_run` journal event — `artha screen-results
+      list-runs`/`show` lists a past shortlist without re-running the
+      screen
 
 ### Phase 2.5 exit criteria (implementation_plan.md §3)
 

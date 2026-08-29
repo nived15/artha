@@ -90,3 +90,35 @@ def test_screen_requires_existing_snapshot(tmp_path, monkeypatch):
     result = runner.invoke(cli, ["screen", "--source", "nonexistent_source", "--track", "A", "--config", str(config_path)])
     assert result.exit_code == 1
     assert "no snapshot found" in result.output
+
+
+def test_screen_results_list_runs_and_show(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    config_path, csv_path = _setup(tmp_path)
+    runner = CliRunner()
+
+    runner.invoke(cli, ["data", "import-screener", str(csv_path), "--source", "screener_profile1", "--config", str(config_path)])
+    screen_result = runner.invoke(cli, ["screen", "--source", "screener_profile1", "--track", "A", "--config", str(config_path)])
+    run_id = [line for line in screen_result.output.splitlines() if line.startswith("screen_run_id:")][0].split(": ")[1]
+
+    list_result = runner.invoke(cli, ["screen-results", "list-runs", "--config", str(config_path)])
+    assert list_result.exit_code == 0, list_result.output
+    assert run_id in list_result.output
+    assert "track=A" in list_result.output
+
+    show_result = runner.invoke(cli, ["screen-results", "show", run_id, "--status", "shortlisted", "--config", str(config_path)])
+    assert show_result.exit_code == 0, show_result.output
+    assert "Alpha Ltd" in show_result.output
+
+    excluded_result = runner.invoke(cli, ["screen-results", "show", run_id, "--status", "excluded", "--config", str(config_path)])
+    assert excluded_result.exit_code == 0
+    assert "Beta Ltd" in excluded_result.output
+
+
+def test_screen_results_list_runs_empty(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    config_path, _ = _setup(tmp_path)
+    runner = CliRunner()
+    result = runner.invoke(cli, ["screen-results", "list-runs", "--config", str(config_path)])
+    assert result.exit_code == 0
+    assert "no screen runs recorded yet" in result.output
