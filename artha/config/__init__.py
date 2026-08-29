@@ -5,6 +5,7 @@ from artha.config.schema import (
     BenchmarkConfig,
     BudgetConfig,
     ConfigError,
+    DataConfig,
     IPSConfig,
     SizingLimits,
 )
@@ -15,6 +16,7 @@ __all__ = [
     "BenchmarkConfig",
     "BudgetConfig",
     "ConfigError",
+    "DataConfig",
     "IPSConfig",
     "SizingLimits",
     "load_config",

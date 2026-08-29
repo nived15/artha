@@ -40,3 +40,10 @@ max_ai_credits_per_dossier = 5.0
 max_concurrent_subagents = 5
 max_total_subagents = 20
 timeout_seconds = 3600
+
+[data]
+# Data spine settings (plan.md §13.4/§13.6, Phase 1).
+snapshot_dir = ".artha/snapshots"
+snapshot_max_age_days = 100
+max_export_columns = 50
+field_map_path = "config/screener_field_map.toml"

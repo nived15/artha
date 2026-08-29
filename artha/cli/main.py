@@ -10,12 +10,18 @@ documented, but they refuse to run until their phase lands.
 from __future__ import annotations
 
 import sys
+from pathlib import Path
 
 import click
 
 from artha import __version__
-from artha.config import ConfigError, load_config
+from artha.config import AppConfig, BenchmarkConfig, ConfigError, IPSConfig, load_config
+from artha.data.field_map import load_field_map
+from artha.data.filings import get_chunk, ingest_filing_from_file
+from artha.data.screener_import import ingest_and_validate
+from artha.data.snapshot import StaleSnapshotError, assert_not_stale, get_snapshot
 from artha.db import apply_migrations, connect, current_schema_version
+from artha.journal import Journal
 from artha.secrets import SecretNotFoundError, delete_secret, has_secret, set_secret
 
 DEFAULT_CONFIG_PATH = "config/artha.toml"
@@ -127,6 +133,173 @@ def _not_implemented(phase: str) -> None:
         err=True,
     )
     sys.exit(1)
+
+
+@cli.group()
+def data() -> None:
+    """Data spine: ingest Screener exports and BSE filings (Phase 1)."""
+
+
+@data.command("import-screener")
+@click.argument("csv_path", type=click.Path(exists=True, dir_okay=False))
+@click.option("--source", required=True, help="Source label, e.g. 'screener_profile1'.")
+@click.option("--profile", default="profile_1_standard", show_default=True, help="§5.3a arithmetic profile name.")
+@click.option("--captured-on", default=None, help="ISO date the export was taken (default: today).")
+@click.option("--config", "config_path", default=DEFAULT_CONFIG_PATH, show_default=True)
+def data_import_screener(csv_path: str, source: str, profile: str, captured_on: str | None, config_path: str) -> None:
+    """Ingest a Screener.in CSV export and run the §13.4 validation-spike checks."""
+    app_config = _load_config_or_default(config_path)
+
+    field_map = load_field_map(app_config.data.field_map_path, profile)
+    csv_bytes = Path(csv_path).read_bytes()
+
+    conn = connect(app_config.db_path)
+    try:
+        apply_migrations(conn)
+        record, report = ingest_and_validate(
+            conn,
+            csv_bytes=csv_bytes,
+            source=source,
+            profile=profile,
+            field_map=field_map,
+            snapshot_dir=app_config.data.snapshot_dir,
+            max_columns=app_config.data.max_export_columns,
+            captured_at=captured_on,
+        )
+        Journal(conn).append(
+            event_type="screener_export_ingested",
+            entity_type="snapshot",
+            entity_id=record.snapshot_id,
+            payload={
+                "source": source,
+                "profile": profile,
+                "row_count": report.row_count,
+                "column_count": report.column_count,
+                "column_ceiling_ok": report.column_ceiling_ok,
+                "unmapped_fields": list(report.unmapped_fields),
+                "missing_columns": list(report.missing_columns),
+                "passed": report.passed,
+            },
+        )
+    finally:
+        conn.close()
+
+    click.echo(f"snapshot_id: {record.snapshot_id}")
+    click.echo(f"captured_at: {record.captured_at}")
+    click.echo(f"rows: {report.row_count}  columns: {report.column_count} (ceiling: {report.max_columns})")
+    click.echo(f"column_ceiling_ok: {report.column_ceiling_ok}")
+    if report.unmapped_fields:
+        click.echo(f"unmapped required fields (add to {app_config.data.field_map_path}): {list(report.unmapped_fields)}")
+    if report.missing_columns:
+        click.echo(f"required fields mapped but missing from CSV: {list(report.missing_columns)}")
+    for fc in report.field_completeness:
+        click.echo(f"  {fc.canonical_name}: {fc.completeness_pct:.1f}% ({fc.non_null_count}/{fc.total_count})")
+
+    if not report.passed:
+        click.echo("§13.4 validation spike: FAILED — see missing/unmapped fields above.", err=True)
+        sys.exit(1)
+    click.echo("§13.4 validation spike: passed (column ceiling + required-field checks).")
+
+
+@data.command("show-snapshot")
+@click.argument("snapshot_id")
+@click.option("--config", "config_path", default=DEFAULT_CONFIG_PATH, show_default=True)
+def data_show_snapshot(snapshot_id: str, config_path: str) -> None:
+    """Print stored metadata and field completeness for a snapshot."""
+    app_config = _load_config_or_default(config_path)
+    conn = connect(app_config.db_path)
+    try:
+        record = get_snapshot(conn, snapshot_id)
+        if record is None:
+            click.echo(f"no such snapshot: {snapshot_id}", err=True)
+            sys.exit(1)
+        rows = conn.execute(
+            "SELECT field_name, completeness_pct FROM snapshot_fields WHERE snapshot_id = ? ORDER BY field_name",
+            (snapshot_id,),
+        ).fetchall()
+    finally:
+        conn.close()
+
+    click.echo(f"snapshot_id: {record.snapshot_id}")
+    click.echo(f"source: {record.source}  profile: {record.profile}")
+    click.echo(f"captured_at: {record.captured_at}  ingested_at: {record.ingested_at}")
+    click.echo(f"rows: {record.row_count}  columns: {record.column_count}")
+    for row in rows:
+        click.echo(f"  {row['field_name']}: {row['completeness_pct']:.1f}%")
+
+
+@data.command("check-staleness")
+@click.argument("snapshot_id")
+@click.option("--config", "config_path", default=DEFAULT_CONFIG_PATH, show_default=True)
+def data_check_staleness(snapshot_id: str, config_path: str) -> None:
+    """Apply the §13.6 staleness guard to a stored snapshot."""
+    app_config = _load_config_or_default(config_path)
+    conn = connect(app_config.db_path)
+    try:
+        record = get_snapshot(conn, snapshot_id)
+        if record is None:
+            click.echo(f"no such snapshot: {snapshot_id}", err=True)
+            sys.exit(1)
+    finally:
+        conn.close()
+
+    try:
+        assert_not_stale(record, app_config.data.snapshot_max_age_days)
+    except StaleSnapshotError as exc:
+        click.echo(str(exc), err=True)
+        sys.exit(1)
+    click.echo(f"snapshot {snapshot_id} is fresh (captured {record.captured_at}).")
+
+
+@data.command("import-filing")
+@click.argument("path", type=click.Path(exists=True, dir_okay=False))
+@click.option("--doc-id", required=True)
+@click.option("--ticker", default=None)
+@click.option("--doc-type", default=None)
+@click.option("--config", "config_path", default=DEFAULT_CONFIG_PATH, show_default=True)
+def data_import_filing(path: str, doc_id: str, ticker: str | None, doc_type: str | None, config_path: str) -> None:
+    """Ingest a plain-text filing into the citation-preserving chunk store."""
+    app_config = _load_config_or_default(config_path)
+    conn = connect(app_config.db_path)
+    try:
+        apply_migrations(conn)
+        record = ingest_filing_from_file(conn, doc_id=doc_id, path=path, ticker=ticker, doc_type=doc_type)
+        Journal(conn).append(
+            event_type="filing_ingested",
+            entity_type="filing",
+            entity_id=record.doc_id,
+            payload={"source_path": record.source_path, "ticker": ticker, "doc_type": doc_type, "sha256": record.sha256},
+        )
+    finally:
+        conn.close()
+    click.echo(f"doc_id: {record.doc_id}  sha256: {record.sha256}")
+
+
+@data.command("show-chunk")
+@click.argument("doc_id")
+@click.argument("page", type=int)
+@click.option("--chunk-index", default=0, show_default=True)
+@click.option("--config", "config_path", default=DEFAULT_CONFIG_PATH, show_default=True)
+def data_show_chunk(doc_id: str, page: int, chunk_index: int, config_path: str) -> None:
+    """Print one stored (doc_id, page, chunk_index) chunk — the citation contract."""
+    app_config = _load_config_or_default(config_path)
+    conn = connect(app_config.db_path)
+    try:
+        chunk = get_chunk(conn, doc_id, page, chunk_index)
+    finally:
+        conn.close()
+    if chunk is None:
+        click.echo(f"no such chunk: ({doc_id}, page={page}, chunk_index={chunk_index})", err=True)
+        sys.exit(1)
+    click.echo(chunk.text)
+
+
+def _load_config_or_default(config_path: str) -> AppConfig:
+    try:
+        return load_config(config_path)
+    except ConfigError as exc:
+        click.echo(f"warning: {exc}\n(using defaults — copy config/artha.example.toml to {config_path} first)", err=True)
+        return AppConfig(ips=IPSConfig(statement_path=""), benchmark=BenchmarkConfig("", "", "", ""))
 
 
 @cli.command()

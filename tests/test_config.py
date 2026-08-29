@@ -30,6 +30,9 @@ track_a_position_pct = 0.03
 
 [budget]
 max_ai_credits_per_dossier = 3.0
+
+[data]
+snapshot_max_age_days = 90
 """
 
 
@@ -42,8 +45,10 @@ def test_load_config_valid(tmp_path):
     assert config.benchmark.index_fund_name == "UTI Nifty 50 Index Fund"
     assert config.sizing.track_a_position_pct == 0.03
     assert config.budget.max_ai_credits_per_dossier == 3.0
+    assert config.data.snapshot_max_age_days == 90
     # unspecified fields fall back to defaults
     assert config.sizing.track_b_position_pct == 0.0125
+    assert config.data.snapshot_dir == ".artha/snapshots"
 
 
 def test_load_config_missing_file(tmp_path):
@@ -74,4 +79,11 @@ def test_load_config_empty_benchmark_field(tmp_path):
     bad = VALID_TOML.replace('index_fund_name = "UTI Nifty 50 Index Fund"', 'index_fund_name = ""')
     path = _write(tmp_path, bad)
     with pytest.raises(ConfigError, match="benchmark.index_fund_name"):
+        load_config(path)
+
+
+def test_load_config_data_max_age_out_of_bounds(tmp_path):
+    bad = VALID_TOML.replace("snapshot_max_age_days = 90", "snapshot_max_age_days = 0")
+    path = _write(tmp_path, bad)
+    with pytest.raises(ConfigError, match="snapshot_max_age_days"):
         load_config(path)
