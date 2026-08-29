@@ -33,10 +33,28 @@ class DossierWriteResult:
     validation: ValidationResult
 
 
+def _safe_dir_name(name: str) -> str:
+    """Sanitize a ticker for use as a directory-name path component.
+
+    Windows silently strips trailing dots and spaces from directory names
+    (a Win32 CreateDirectory quirk) — e.g. mkdir("Eco Recyc.") actually
+    creates "Eco Recyc" on disk with no error and no visible sign anything
+    happened. Screener.in tickers routinely end in "." (abbreviated
+    company names), so left unsanitized this silently produces a directory
+    whose name doesn't match `dossier.identity.ticker`, and — worse —
+    would produce a *different* directory tree on Windows than on Linux/Mac
+    (where the trailing dot is preserved), an even harder bug to notice.
+    Stripped here explicitly and consistently across platforms so the
+    behavior is deterministic and identical everywhere, matching what
+    Windows already does silently.
+    """
+    return name.rstrip(". ") or name
+
+
 def write_dossier_file(dossier: Dossier, *, run_id: str, dossiers_root: str | Path = "dossiers") -> Path:
     """Write the immutable markdown artifact to dossiers/<ticker>/<run_id>.md."""
     root = Path(dossiers_root)
-    ticker_dir = root / dossier.identity.ticker
+    ticker_dir = root / _safe_dir_name(dossier.identity.ticker)
     ticker_dir.mkdir(parents=True, exist_ok=True)
     file_path = ticker_dir / f"{run_id}.md"
     if file_path.exists():

@@ -1,0 +1,71 @@
+ECO RECYCLING LIMITED (BSE: 530643, "Ecoreco")
+Business overview and industry structure
+
+Source: web research synthesizing Ecoreco's corporate site (ecoreco.com),
+India Infoline's Directors' Report summary, Trendlyne's peer-group listing,
+and Multibagger Hunt's Q2 FY25 write-up. Captured via web research on
+2026-08-30.
+
+BUSINESS DESCRIPTION
+
+Eco Recycling Limited is described as a pioneer in India's e-waste
+management sector, incorporated in 1994 (per public company-registry
+records, CIN L74120MH1994PLC079971). Its business model is described as
+vertically integrated across the e-waste value chain:
+
+- Collection & Reverse Logistics: pan-India collection of end-of-life
+  electronics.
+- Data Destruction: secure destruction of sensitive storage devices.
+- Refurbishment & IT Asset Disposition (ITAD): recovering and extending the
+  life of electronics where possible.
+- Material Recovery: extracting precious, rare, and base metals from
+  e-waste for recycling.
+- Remarketing: reselling refurbished devices and recovered components.
+- EPR Compliance services: helping electronics manufacturers (OEMs) meet
+  their Extended Producer Responsibility obligations under India's
+  E-Waste Management Rules, 2022.
+- Other services: lamp recycling, battery recycling, a mobile collection
+  service branded "Recycling on Wheels — SmartER", and corporate/school
+  collection drives.
+
+The company's recycling facility is described as CPCB (Central Pollution
+Control Board) and MPCB (Maharashtra Pollution Control Board) authorized,
+and R2v3 ("Responsible Recycling") certified, with a stated processing
+capacity of up to 31,200 metric tonnes per annum.
+
+INDUSTRY STRUCTURE AND NAMED COMPETITORS
+
+The formal (licensed/certified) Indian e-waste recycling sector is
+described as including, alongside Ecoreco: EMS Ltd (described as the
+market leader), Antony Waste Handling Cell, Concord Enviro Systems,
+Hi-Green Carbon Ltd, Race Eco Chain Ltd, and Organic Recycling Systems Ltd.
+Competitive dynamics described: growth driven by rising electronics
+consumption, digitization, and tightening enforcement of the E-Waste
+Management Rules 2022; challenges include competition from the informal
+(unlicensed) recycling sector, short electronics product life cycles, and
+the need for continuous technology adaptation.
+
+Relative to the named peers, Ecoreco is described as: nearly debt-free,
+among the highest operating margins in the peer set, and having shown
+strong profit growth over the trailing five years (a reported CAGR range
+of 44-99%, per the secondary-source summary — treated here as a rough
+directional signal rather than an exact, independently confirmed figure).
+
+STRATEGIC INITIATIVES
+
+The company's FY2025 Management Discussion & Analysis (as summarized by
+secondary sources) describes: continued technology investment, new
+collection models (e.g. "Recycling on Wheels"), and compliance leadership
+as strategic priorities, and states the company has considered a strategic
+partnership with ERI (a US-based recycler) to deepen technology and
+best-practices adoption. It frames the company's positioning as aiming to
+be OEMs' and corporates' preferred formal-sector partner for e-waste
+compliance, data-security, and sustainability needs.
+
+CAVEAT: This document is built from secondary web sources (corporate
+website content, financial-portal summaries, and a directors'-report
+summary), not a direct, independently-parsed read of the primary annual
+report PDF or its MD&A section verbatim. Directly-fetched attempts at
+Ecoreco's own website (ecoreco.com/annual-reports/, /investor-overview/)
+returned only page metadata/boilerplate in this research session, not the
+underlying report text itself.
