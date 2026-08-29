@@ -1,0 +1,49 @@
+KOTHARI PETROCHEMICALS LIMITED (NSE: KOTHARIPET)
+Financial highlights and Stage 1a reconciliation
+
+Source: Stage 1a Screener snapshot (screener_exports/artha-profile-1-validation.csv,
+captured 2026-08-30) plus secondary web research (Yahoo Finance,
+Value Research Online, investing.com dividend history). Captured 2026-08-30.
+
+STAGE 1A SNAPSHOT FIGURES (screener_profile1, snapshot_id
+a0d7e35e3abb34602e52ac01075992c76e302178919722d74cb3769f8ad75198):
+Market Capitalization Rs 771.77 crore; Return on Capital Employed (ROCE)
+28.60%; Return on Equity (ROE) 21.43%; Debt-to-Equity 0.01 (near
+debt-free); Operating Profit Margin (OPM) 16.65%; 3-year sales growth
+7.04%; 3-year profit growth 24.10%; Price-to-Earning (P/E) 10.70x; Artha
+PEG 0.44; Promoter holding 72.22%; Promoter pledge 0.00%; 3-year
+promoter-holding trend +1.24 (modestly rising, not declining).
+
+SECONDARY-SOURCE FIGURES (Yahoo Finance / Value Research, NOT
+independently read from the primary annual report): Market Capitalization
+reported in a Rs 774-790 crore range (broadly consistent with the Stage 1a
+figure); EPS Rs 12.22; P/E approximately 10.7x (consistent with the Stage
+1a figure); 52-week price range Rs 94.75 to Rs 174.00; Dividend yield
+reported in a 0.76%-1.52% range depending on source/date; ROE approximately
+21.4% (consistent with the Stage 1a figure). FY2025 revenue approximately
+Rs 589 crore versus approximately Rs 604 crore in FY2024 (a slight
+year-over-year decline); FY2025 net profit approximately Rs 65.8 crore
+versus approximately Rs 63.8 crore in FY2024 (modest growth despite the
+revenue decline).
+
+DIVIDEND RECORD: an interim dividend of Rs 1.00/share was declared in
+August 2025 (ex-date Aug 18, 2025), and a final dividend of Rs 1.00/share
+in July 2024 -- consistent with an established, dividend-paying company,
+distinct from GGBL, Modi Naturals, and Virtual Galaxy in this research
+batch, none of which currently pay dividends. Payout ratio reported at
+approximately 8.1% (TTM); 5-year dividend growth rate reported at
+approximately +28.47%, though the absolute payout ratio remains modest.
+
+RECONCILIATION NOTE: the Stage 1a 3-year sales growth (7.04%) and profit
+growth (24.10%) describe a moderate, single-digit-revenue-growth /
+low-double-digit-plus-profit-growth pattern -- i.e. profit growing faster
+than sales, consistent with the secondary-sourced FY24-to-FY25 pattern of
+slightly declining revenue but rising profit (margin expansion). This is
+a materially different, more moderate growth profile than GGBL's
+triple-digit growth figures in this same research batch, and is flagged
+explicitly as the more "steady compounder" profile of the two Track A
+picks rather than a hyper-growth story.
+
+NOT AVAILABLE in this Profile 1 snapshot: OCF/PAT, gross margin (distinct
+from OPM), interest coverage, FCF conversion %, current ratio, price-to-
+book, and a verified EPS-decline history over 5+ years.

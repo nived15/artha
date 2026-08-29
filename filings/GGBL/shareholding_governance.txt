@@ -1,0 +1,46 @@
+GANESH GREEN BHARAT LIMITED (NSE: GGBL)
+Shareholding and governance notes
+
+Source: web research synthesizing Trendlyne's shareholding-pattern page,
+Upstox's shareholding-pattern page, and Economic Times markets data.
+Captured via web research on 2026-08-30.
+
+PROMOTER SHAREHOLDING (as of the most recent disclosed quarter, ~March 2026):
+Promoters hold 73.42% of total shares. No promoter shares are pledged
+(0.00% pledged). Public/retail shareholders hold approximately 25.82%.
+Foreign Institutional Investor (FII) holding is reported at 0% as of the
+most recent quarter (down from a small prior holding). Domestic
+Institutional Investor (DII) holding is approximately 0.76%. Mutual fund,
+bank, and insurance holdings are reported at 0%.
+
+NAMED PROMOTER INDIVIDUALS (per Trendlyne/Upstox shareholding-pattern
+disclosures): Ketanbhai Narsinhbhai Patel (41.98%), Rajendrakumar
+Narsinhbhai Patel (13.06%), Niravkumar Sureshbhai Patel (13.06%), plus
+smaller holdings (approximately 1-1.5% each) attributed to Shilpaben
+Ketanbhai Patel, Khushbu Niravkumar Patel, Ashaben Rajendrakumar Patel, and
+Dhanjibhai Narsinhbhai Patel -- consistent with a single extended
+promoter-family control structure (the Patel family), not a professionally
+managed or institutionally-backed promoter group.
+
+RELATED PARTY TRANSACTIONS AND AUDITOR: GGBL is stated to make related
+party transaction disclosures per SEBI LODR requirements, with a "Policy
+on Materiality of Related Party Transactions" referenced on its investor
+relations page. However, this research pass did NOT independently read the
+primary annual report's related-party-transaction notes or confirm the
+statutory auditor's name, tenure, or audit-opinion status -- these specific
+governance facts are reported as unverified rather than assumed clean.
+
+SEBI / REGULATORY FLAGS: no SEBI show-cause order, adverse
+related-party-transaction finding, or auditor resignation was found
+referenced in the sources consulted for this research pass (multiple
+search queries). This is an absence of finding in general public research,
+not an exhaustive review of SEBI's enforcement database or the company's
+full exchange-filing history.
+
+CONCENTRATION RISK NOTE: the promoter family's very high combined holding
+(73.42%) concentrated in a small number of related individuals, combined
+with 0% institutional (FII/DII/mutual fund) participation beyond a token
+0.76% DII stake, means this stock currently has essentially no independent
+institutional due-diligence validation of its numbers or governance --
+flagged here as a real, structural information-quality risk distinct from
+the promoter-integrity checks themselves.

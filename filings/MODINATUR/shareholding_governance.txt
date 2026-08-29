@@ -1,0 +1,41 @@
+MODI NATURALS LIMITED (NSE: MODINATUR)
+Shareholding and governance notes
+
+Source: web research synthesizing Trendlyne's shareholding-pattern page,
+Tickjournal's shareholding tracker, and indianstockalerts.com's related-
+party-transaction summary page. Captured via web research on 2026-08-30.
+
+PROMOTER SHAREHOLDING: Promoter holding remained steady at approximately
+69.09% throughout FY2025 and into 2026, consistent for several preceding
+quarters (Trendlyne). No promoter shares were pledged during this period
+(0.00% pledge, consistent with the Stage 1a snapshot). Institutional
+participation (FII/DII) is reported as negligible/not notable; public
+shareholding is approximately 30.9%.
+
+RELATED PARTY TRANSACTIONS: Modi Naturals maintains a published "Policy on
+Dealing with Related Party Transactions" on its investor-relations page.
+Per indianstockalerts.com's related-party-transaction summary page and
+general public disclosures, there is no reported material or unusual
+related-party transaction for FY2025 -- routine transactions typical of a
+family-promoter-controlled company exist, but nothing flagged as an
+exception in the sources consulted. This research pass did NOT
+independently read the primary annual report's related-party-transaction
+notes table line by line, so the absence-of-finding above should be read
+as "not flagged by secondary sources," not as an independently verified
+clean bill.
+
+AUDITOR AND SEBI FLAGS: this research pass did not locate the statutory
+auditor's name, tenure, or audit-opinion status, nor any SEBI show-cause
+order, adverse RPT finding, or auditor resignation referenced in the
+sources consulted. As with the other candidates in this batch, this is an
+absence of finding in general public research, not an exhaustive
+regulatory-database review.
+
+FAMILY-PROMOTER CONTROL STRUCTURE: the company is described as a
+family-run business (the "Modi" family name is the company's own name),
+similar in structure to GGBL (Patel family) in this same research batch --
+a single-family promoter control structure with a high, stable, unpledged
+holding is a genuinely positive integrity signal on the specific dimensions
+this pipeline can check (pledge, holding trend), but it also means board
+independence and professional-management depth cannot be assumed without
+further verification.

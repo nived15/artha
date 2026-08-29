@@ -1,0 +1,62 @@
+VIRTUAL GALAXY INFOTECH LIMITED (NSE SME/Emerge: VGINFOTECH)
+Business overview and industry structure
+
+Source: web research synthesizing thecompanycheck.com company profile,
+screener.in, MarketScreener, and stockanalysis.com company-profile pages.
+Captured via web research on 2026-08-30.
+
+BUSINESS DESCRIPTION
+
+Virtual Galaxy Infotech Limited (VGIL) is an Indian IT and enterprise
+software company headquartered in Nagpur, Maharashtra, founded in 1997 --
+i.e. it has approximately three decades of pre-listing operating history,
+despite being a comparatively recent stock-market listing. It specializes
+in SaaS-based solutions across banking, enterprise resource planning
+(ERP), e-governance, and custom IT systems:
+
+- Core Banking: its flagship product, "E-Banker," is a core-banking
+  solution reportedly deployed across over 5,000 bank branches.
+- ERP: enterprise resource planning systems for business automation.
+- E-governance platforms: named products include "E-APMC" (agricultural
+  market/mandi automation) and "E-Autopsy" (forensic-department
+  digitization), among others.
+- Tax/compliance and payments: a tax-compliance product ("VGST") and a
+  digital-payments product ("V-Pay").
+- Cloud/infrastructure services: IaaS, SaaS, hosting, storage, backup, and
+  migration services, plus cybersecurity and conversational-AI offerings.
+
+Industry verticals served: BFSI (Banking, Financial Services, Insurance),
+government corporations/agencies, and industrial enterprises.
+
+LISTING STATUS -- IMPORTANT RISK FLAG
+
+VGIL is listed on the NSE SME (NSE Emerge) platform, NOT the NSE/BSE
+mainboard. Its IPO raised approximately Rs 93.3 crore. SME-platform
+listings in India carry materially different risk characteristics from
+mainboard listings: lower minimum public float and lot-size-based trading
+(reducing retail liquidity), lighter continuous-disclosure obligations
+than mainboard-listed companies, thinner analyst/institutional coverage,
+and a much shorter public listed-market history over which price/volume
+patterns, promoter conduct, and disclosure quality can be independently
+observed. This is flagged explicitly and prominently, not treated as
+incidental -- it is the single most material structural risk factor for
+this specific candidate, distinct from (and additive to) its business
+fundamentals.
+
+INDUSTRY STRUCTURE
+
+VGIL competes in India's core-banking-software and e-governance IT-services
+market, a segment with several established larger listed/unlisted players
+(e.g. Infosys Finacle, TCS BaNCS, FIS, Oracle FLEXCUBE at the large-bank
+end; a longer tail of smaller regional core-banking vendors serving
+cooperative/regional/rural banks at the smaller end, which appears to be
+VGIL's actual competitive tier given its scale). No specific named client
+list or competitor comparison was found in the sources consulted for this
+research pass -- VGIL's precise competitive positioning within the
+smaller-bank/cooperative-bank segment is asserted by the company's own
+marketing material but not independently corroborated here.
+
+CAVEAT: This document is built from secondary web sources (company-profile
+aggregator pages), not a direct, independently-parsed read of the primary
+DRHP, annual report, or exchange filings verbatim. No order-book or named
+client-contract disclosure was found in this research pass.

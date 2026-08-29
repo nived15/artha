@@ -1,0 +1,48 @@
+VIRTUAL GALAXY INFOTECH LIMITED (NSE SME/Emerge: VGINFOTECH)
+Financial highlights and Stage 1a reconciliation
+
+Source: Stage 1a Screener snapshot (screener_exports/artha-profile-1-validation.csv,
+captured 2026-08-30) plus secondary web research (screener.in, INDmoney
+quarterly results, ICICI Direct financials). Captured 2026-08-30.
+
+STAGE 1A SNAPSHOT FIGURES (screener_profile1, snapshot_id
+a0d7e35e3abb34602e52ac01075992c76e302178919722d74cb3769f8ad75198):
+Market Capitalization Rs 369.30 crore; Return on Capital Employed (ROCE)
+33.74%; Return on Equity (ROE) 29.58%; Debt-to-Equity 0.22; Operating
+Profit Margin (OPM) 46.25% (notably high, consistent with a software/IP
+licensing business model rather than a hardware or EPC business); 3-year
+sales growth 46.38%; 3-year profit growth 194.74%; Price-to-Earning (P/E)
+8.01x; Artha PEG 0.04; Promoter holding 65.00%; Promoter pledge 0.00%;
+3-year promoter-holding trend not available in this export (reported as
+null, not assumed flat).
+
+SECONDARY-SOURCE FIGURES (thecompanycheck.com / screener.in): Market Cap
+approximately Rs 369 crore (consistent with the Stage 1a figure); FY2025
+revenue approximately Rs 120 crore; profit CAGR over the last 5 years
+reported at approximately 83.8%; ROCE approximately 33.7% (consistent with
+the Stage 1a figure); P/E approximately 8x (consistent with the Stage 1a
+figure). Q4 FY2025-26 (quarter ending March 2026): revenue approximately
+Rs 55.44 crore (up approximately 190% YoY); net profit approximately Rs
+14.49 crore (up approximately 195% YoY); net profit margin approximately
+26.14%. The prior-year comparable quarter, Q4 FY2024-25: revenue
+approximately Rs 19.06 crore; net profit approximately Rs 4.90 crore; net
+margin approximately 25.71%.
+
+GROWTH-QUALITY CAVEAT: as with several other candidates in this research
+batch, the very high percentage growth figures (194.74% 3-year profit
+growth per Stage 1a; ~190% YoY quarterly revenue growth per the Q4
+FY2025-26 figure) are measured off what is still a genuinely small
+absolute revenue base (~Rs 120 crore FY2025 revenue; ~Rs 19-55 crore
+per-quarter revenue). This is the same low-base-effect caution flagged for
+GGBL and Modi Naturals in this batch -- extremely high percentage growth
+off a small base is structurally easier to sustain briefly and harder to
+sustain indefinitely, and should not be extrapolated forward at face
+value without independent confirmation of a multi-year, not single-quarter,
+trend.
+
+NOT AVAILABLE in this Profile 1 snapshot: OCF/PAT, gross margin (distinct
+from OPM), interest coverage, FCF conversion %, current ratio,
+price-to-book, and dividend record (secondary sources report no dividend
+currently paid). No independent order-book or client-concentration
+disclosure was found (see business-overview document's caveat on
+competitive positioning).

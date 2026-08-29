@@ -1,0 +1,57 @@
+KOTHARI PETROCHEMICALS LIMITED (NSE: KOTHARIPET)
+Business overview and industry structure
+
+Source: web research synthesizing kotharipetrochemicals.com (company site),
+Yahoo Finance company profile, Value Research, and Business Today company
+pages. Captured via web research on 2026-08-30.
+
+BUSINESS DESCRIPTION
+
+Kothari Petrochemicals Limited is primarily engaged in the manufacture and
+sale of Polyisobutylene (PIB), a specialty petrochemical polymer, and
+related petrochemical products. The company is described as the largest
+producer of premium-quality PIB in India. PIB is used across a wide range
+of industrial applications, including automotive lubricant additives,
+adhesives, sealants, plastic masterbatches, and other technical/industrial
+formulations. The company supplies to both domestic Indian customers and
+export markets, with multiple grades of PIB manufactured for different
+technical applications. (Correction/clarification versus an earlier
+research assumption: this company's core business is Polyisobutylene, NOT
+recycled polyester or PET recycling -- no evidence was found of a recycled
+polyester business line.)
+
+INDUSTRY STRUCTURE
+
+PIB manufacturing is a specialty/technical petrochemical segment, distinct
+from bulk commodity petrochemicals -- it is characterized by fewer
+producers, technical product differentiation by grade/molecular weight,
+and demand tied to automotive lubricants, industrial adhesives/sealants,
+and plastics processing. As a petrochemical input manufacturer, the
+business is exposed to crude-oil/feedstock price volatility and cyclical
+industrial demand, though being the largest premium-PIB producer in India
+is described as a scale/technical-differentiation position within this
+niche rather than a commodity-scale cost position.
+
+FINANCIAL PROFILE
+
+The company is a long-established, dividend-paying petrochemical
+manufacturer (part of the H C Kothari Group) rather than a recent listing.
+Per secondary-source reporting: FY2025 revenue approximately Rs 589 crore
+(versus approximately Rs 604 crore in FY2024, a slight year-over-year
+revenue decline); FY2025 net profit approximately Rs 65.8 crore (versus
+approximately Rs 63.8 crore in FY2024, i.e. profit grew modestly even as
+revenue declined slightly -- consistent with margin expansion or a
+lower-cost input environment, not verified further here). EPS for FY2025
+reported at approximately Rs 11.18 per recent financial-highlight
+summaries (a different figure than the Stage 1a snapshot's own EPS-implied
+figures -- both are reported here rather than reconciled with false
+precision).
+
+CAVEAT: This document is built from secondary web sources (corporate
+website description, financial-portal company profiles, and a recent
+financial-highlights summary), not a direct, independently-parsed line
+item read of the FY2024-25 annual report PDF (available at
+kotharipetrochemicals.com/investors/annual-reports/ and via NSE's archive)
+verbatim. The revenue/PAT figures above are secondary-sourced and were not
+independently cross-verified against the primary PDF filing in this
+research pass.
