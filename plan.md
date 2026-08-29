@@ -131,7 +131,20 @@ NSE/BSE listed, with a minimum market cap and traded-volume floor so positions a
 A written, machine-readable sector allowlist. Everything outside is filtered out before research spend. Plausibly in: IT services, SaaS, platforms, consumer businesses. Plausibly out: banks/NBFCs (leveraged black boxes), pharma (regulatory binaries), commodities. **Track B may relax sector limits only where the inflection is mechanically evident in the financials** — an explicit, logged exception, since turnarounds cluster in cyclicals.
 
 ### 5.3 Stage 1 — wide quantitative screen
-Cheap, runs over the full universe, track-specific rule sets. Output: a few hundred names, ranked. The rule sets are explicit, attributed formulas (full citations, thresholds and caveats in §17):
+Cheap, runs over the full universe, track-specific rule sets. Output: a few hundred names, ranked. The rule sets are explicit, attributed formulas (full citations, thresholds and caveats in §17).
+
+**Screener does the fetching; Artha does the judging.** The universe is exported from Screener Premium (§13.2a) filtered only by §5.1's market-cap and liquidity floor — *not* by the rules below. Encoding §5.3/§5.4 as Screener query filters would put this plan's intellectual content in a vendor's query box instead of version-controlled, testable code, and it would break §5.4's Greenblatt gate, which must rank an **unfiltered** universe to have a decile at all.
+
+Because the export is **one row per company**, Stage 1 splits in two:
+
+| | Tests | Data | Volume |
+|---|---|---|---|
+| **Stage 1a** | **Level** tests — current thresholds and ratios, plus the Greenblatt ordinal rank (§5.4) | CSV snapshot, ~50 columns | ~2,000 |
+| **Stage 1b** | **History** tests — multi-year consistency and own-history comparisons, which no single row can answer | Per-company pages and BSE filings | ~200–300 |
+
+Stage 1b carries, among others: ROE/ROIC sustained ≥15 of the last 10 years; "no year of EPS decline"; Graham's 10-year earnings-deficit and dividend-record tests; P/E on 3-yr average EPS; and Davis's own-5-year-history P/E tercile. Deferring these to ~200–300 names rather than running them across 2,000 is what keeps the data layer cheap (§13).
+
+The rule sets:
 
 **Track A (compounders):**
 - **Quality gate (Agrawal QGLP "Q"):** ROE ≥ 15% and ROCE ≥ 15% (3-yr avg; ≥20% ideal), D/E ≤ 1.0, OCF/PAT ≥ 0.8, promoter holding ≥ 50% and not declining.
@@ -140,7 +153,7 @@ Cheap, runs over the full universe, track-specific rule sets. Output: a few hund
 - **Graham defensive criteria (optional qualifying screen, thresholds relaxed for the Indian listing base per §17's caveat):** current ratio ≥ 2.0; no earnings deficit in the last 10 years; P/E ≤ 15× (3-yr avg EPS); P/B ≤ 1.5×; P/E × P/B ≤ 22.5 (the "Graham Number" ceiling); dividend record relaxed to ≥ 10 consecutive years (Graham's original 20-year test excludes almost every Indian listing).
 
 **Track B (asymmetric bets):**
-- **Davis Double Play screen:** entry P/E in the bottom tercile of the stock's own 5-year history **and** ≤ 80% of sector-median P/E; trailing **and** forward EPS growth ≥ 15%; ROE ≥ 15%; D/E ≤ 1.5×; P/E floor ≥ 5× (excludes distress/value-traps). Implied-return score: `(1 + trailing EPS CAGR)^3 × (sector-median P/E ÷ entry P/E) − 1` — the multiplicative "double play," never additive.
+- **Davis Double Play screen:** entry P/E in the bottom tercile of the stock's own 5-year history **and** ≤ 80% of sector-median P/E; trailing EPS growth ≥ 15% together with ***reported* acceleration** (latest-quarter EPS YoY, and TTM vs prior TTM, both positive and improving); ROE ≥ 15%; D/E ≤ 1.5×; P/E floor ≥ 5× (excludes distress/value-traps). **This clause deliberately tests reported inflection, never forward estimates** — consensus does not exist affordably for India (§13.3b), the smallcaps Kedia SMILE hunts are by definition analyst-uncovered, and the implied-return formula below already consumes *trailing* EPS CAGR, so a forward number was never used by the screen it gated. Implied-return score: `(1 + trailing EPS CAGR)^3 × (sector-median P/E ÷ entry P/E) − 1` — the multiplicative "double play," never additive.
 - **Lynch PEG screen:** `PEG = P/E ÷ trailing 5-yr EPS growth %` (dividend-yield-adjusted — `P/E ÷ (growth % + dividend yield %)` — for stalwarts/slow growers). Buy zone PEG < 1.0 (primary band 0.5–1.0); classify every candidate into Lynch's taxonomy (fast grower ≥20% EPS CAGR, stalwart 8–12%, slow grower ≤6%, cyclical, turnaround, asset play) so the dossier's growth claims are checked against the right comparison set.
 - **Kedia SMILE screen:** market cap ₹200 Cr (Artha's own liquidity floor, §5.1) – ₹5,000 Cr (Kedia's stated ceiling); years since incorporation 10–35 (proxy for "medium" management experience); promoter holding ≥ 40%; low sell-side analyst coverage. The "Large aspiration" and "Extra-large market opportunity" letters are qualitative and deferred to Stage 3 — no numeric proxy is reliable enough for a hard Stage 1 filter.
 - **O'Neil CANSLIM momentum overlay (Track B only, applied *after* the fundamental filters above pass — a timing layer, not a substitute for them):** current-quarter EPS growth ≥ 25% YoY (accelerating preferred); 3-year EPS CAGR ≥ 25% with ROE ≥ 17%; price within 5% of a breakout pivot from a proper chart base (cup-with-handle or flat base); breakout-day volume ≥ 40% above the 50-day average; constructed NSE/BSE relative-strength percentile ≥ 80; rising institutional ownership; Nifty 50/Sensex in a confirmed uptrend. This answers "is it ready to buy *now*," not "is it a good business" — that's still the fundamental screen's job.
@@ -209,7 +222,7 @@ Sections 12 and 14 are the anti-self-deception mechanism. A dossier missing eith
 16. **QGLP Scorecard** (Raamdeo Agrawal) — *primarily Track A.* Quality / Growth / Longevity / Price scored 0–3 each (§5.3, §17) with evidence per letter and the combined score out of 12; Price is scored last, by design.
 17. **Margin-of-Safety & Scuttlebutt Notes** (Graham + Fisher, combined into one qualitative-diligence block) — *both tracks.* Graham's seven defensive-investor criteria with pass/fail evidence, computed margin of safety vs. an intrinsic-value estimate, and the Graham Number ceiling; Fisher's 15-point checklist scored pass/partial/fail/unknown with source-cited evidence per point.
 18. **Super-Investor Integrity Gate** (Fisher Point 15 + Agrawal governance signals) — *gate; both tracks.* This is the dossier-level record of the expanded promoter-integrity red flags in §5.4 — kept as its own gated section, not buried in the fatal-flaw checklist, because management integrity is a single-point-of-failure the other 23 sections cannot compensate for.
-19. **The Davis Double Play Mechanism** (Shelby Davis) — *Track B.* Entry P/E, trailing/forward EPS growth, the sector-median re-rating target, the implied multiplicative return (§5.3's formula) and CAGR, and the "double play in reverse" risk flag if earnings and multiple could fall together.
+19. **The Davis Double Play Mechanism** (Shelby Davis) — *Track B.* Entry P/E, trailing EPS growth **and reported acceleration** (forward estimates are deliberately excluded — §5.3, §13.3b), the sector-median re-rating target, the implied multiplicative return (§5.3's formula) and CAGR, and the "double play in reverse" risk flag if earnings and multiple could fall together.
 20. **Scale Economies Shared Assessment** (Nick Sleep & early Buffett) — *both tracks, most relevant where pricing power is the thesis.* ROIIC (3yr/5yr), volume-vs-price decomposition, quoted-and-cited management language on passing scale savings to customers, and a moat-widening/stable/narrowing verdict.
 21. **Magic Formula Attribution** (Joel Greenblatt) — *both tracks.* The stock's ROC and Earnings Yield values, their ordinal ranks and percentile within the Stage-2 investable universe, and the combined rank — a quantitative-entry note, not a standalone buy case.
 22. **Quality-Compounding Checklist** (Terry Smith) — *Track A.* ROCE trend, FCF conversion %, gross margin vs. sector, interest cover, and the reinvestment-runway rationale for why the price is justified despite not being statistically cheap — plus a reminder that "do nothing" means not selling absent thesis impairment, not absolute inertia.
@@ -297,7 +310,7 @@ Each phase earns the next, and each ends in something that demonstrably works.
 
 **Phase 0 — Foundations.** IPS written. Benchmark frozen and recorded. Passive core and ballast funded. Repo skeleton, SQLite schema, config, secrets in keyring. *Exit: IPS exists; passive portfolio live; `artha --version` runs.*
 
-**Phase 1 — Data spine.** **Starts with the §13.4 validation spike: test EODHD field completeness against 50–100 known smallcaps before building on it**, and verify stockinsights.ai India pricing and Tijori throughput limits. Then ingest universe, fundamentals and prices. Snapshot and cache with provenance. *Exit: spike results recorded; full universe refreshed reproducibly from a cold start; every field traceable to a source.*
+**Phase 1 — Data spine.** **Starts with the §13.4 validation spike: confirm Screener Premium's 50-column export carries the full Stage 1/Stage 2 field set — including Greenblatt's ROC and EV components and the shareholding fields — and measure completeness on 50–100 known smallcaps before building on it.** Then ingest the exported universe snapshot, prices, and BSE feeds. Snapshot and cache with provenance, including §13.6's staleness guard. *Exit: spike results recorded; a screen run reproduces exactly from a stored, hashed CSV snapshot; every field traceable to a source.*
 
 **Phase 2 — Screening + disqualifiers.** Both track screens (the full formula set — Agrawal QGLP, Graham, Terry Smith, Buffett/Munger moat proxies, Davis, Lynch PEG, Kedia SMILE, O'Neil overlay — and the Greenblatt/Pabrai hard blocks, §5.3–§5.4) and the automated fatal-flaw blocks. *Exit: a run produces a ranked shortlist per track, with every exclusion explained and attributed to the rule that fired.*
 
@@ -328,17 +341,21 @@ Each phase earns the next, and each ends in something that demonstrably works.
 
 ## 13. Data layer
 
-No single provider covers all ~2,000 listed Indian stocks with complete, fresh, ToS-clean, affordable fundamentals. The answer is a deliberate four-layer stack.
+No single provider covers all ~2,000 listed Indian stocks with complete, fresh, ToS-clean, affordable fundamentals. The answer is a deliberate layered stack, built around one correction: **the India-native source is simultaneously the cheapest and the most complete, and this plan previously excluded it by over-reading its terms (§13.2a).**
 
 | Layer | Choice | Cost/month | ToS risk |
 |---|---|---|---|
 | **Price + orders** | Kite Connect (paid tier) | ₹500 | 🟢 Low |
-| **Wide-screen fundamentals** | EODHD (`SYMBOL.NSE` / `.BSE`) | ~₹1,700 ($19.99) | 🟢 Low |
+| **Wide-screen fundamentals + shareholding** | **Screener.in Premium — first-party CSV export** | **~₹416** (₹4,999/yr) | 🟢 Low |
 | **Governance alerts + filing PDFs** | **BSE official RSS/XML feeds** | **Free** | 🟢 Low |
-| **Deep-dive documents** | stockinsights.ai Filings Feed API | ~$17+ (India pricing unpublished) | 🟢 Low |
-| **Cross-validation** | Tijori Finance (Zerodha-backed, 6,000+ metrics) | ~₹340 ($4) | 🟢 Low |
+| **Deep-dive documents** | BSE filing PDFs — annual reports, results, concalls | Free | 🟢 Low |
+| **Cross-validation** | BSE XBRL, spot-checked on Stage 3 names only (§13.6) | Free | 🟢 Low |
 
-**Total ≈ ₹2,500–2,800/month**, inside budget.
+**Total ≈ ₹900/month**, down from the ₹2,500–2,800 previously recorded here.
+
+**Why not EODHD** (the previous wide-screen pick): its Fundamentals Data Feed is **$59.99/month (~₹5,100)** — the ~₹1,700 ($19.99) figure previously in this table was the EOD *prices* plan, which carries **no fundamentals at all**. So it is roughly **12× the cost of Screener Premium**, and it is *weaker* precisely on the India-specific fields this plan leans on hardest (promoter holding, pledging, shareholding trend — §13.3a). Its terms also require deleting all data within one month of cancellation, which is directly incompatible with §16.6 snapshot immutability and rules out buying it as a one-off snapshot.
+
+**Why not Tijori:** it has no public API, and — verified — it carries **no analyst estimates either**, so it solves neither the access problem nor the gap it was originally listed to fill (§13.3b). Its genuine differentiator, segment and operational KPIs, is Stage 3 material already available at primary source in the filings §5.5 reads anyway.
 
 ### 13.1 The best find: BSE solves governance alerts for free
 BSE publishes **official, free, public RSS/XML feeds** — corporate announcements, annual reports, financial results, insider trading (PIT), board meetings — each carrying company name, ISIN and a downloadable PDF link. Parse with `feedparser`, filter by watchlist ISIN.
@@ -348,25 +365,57 @@ This also **solves the credit-rating problem elegantly**: no rating agency (CRIS
 *Caveat:* BSE feeds cover BSE-listed companies. Most NSE names are dually listed, so coverage is near-complete; NSE-only listings need a low-volume supplement.
 
 ### 13.2 What we must not use
-- **Screener.in — 🔴 ToS violation.** Its terms permit "personal, non-commercial transitory viewing only." Every GitHub/Apify "Screener API" scraper breaches this. **Excellent for manual research; forbidden for automation.** This matters because it is the obvious first choice.
+- **Screener.in *scrapers* — 🔴 ToS violation.** Its terms permit "personal, non-commercial transitory viewing only." Every GitHub/Apify "Screener API" scraper breaches this. **This ban is on scraping, not on Screener itself** — see §13.2a, which is the correction that reshapes this whole section.
+- **"Screener MCP" / "Tijori MCP" servers — 🔴 forbidden.** Wrapping a scraper in MCP does not change the underlying terms. Two aggravating factors beyond the plain ToS breach: (i) the *custom-screen and CSV* tools — the only ones Stage 1 would want — require your own logged-in `SCREENER_SESSION_COOKIE`, so the breach is **authenticated to your named account** and your session credential is handed to a third-party package; (ii) HTML scrapers **fail silently** — a changed selector returns *fewer rows*, not an error, which would corrupt §5.4's Greenblatt decile with no signal that anything went wrong. That second failure mode is disqualifying on correctness grounds alone, independent of any ToS view.
 - **yfinance for the wide screen** — fragile, unofficial, breaks several times a year, wrong adjusted prices on Indian corporate actions. Widely recommended; unusable in production.
 - **nsepy** — broken/deprecated since NSE's backend change. **nsetools/bsedata** — unmaintained.
 - **FMP** — India needs the **$149/month** Ultimate tier and is *still* thin on smallcaps. Blogs never disclose this.
 - **Alpha Vantage / Polygon / Intrinio / LSEG** — patchy on India, US-only, or institutionally priced.
 - **Reverse-engineered NSE JSON endpoints** — breach NSE's site terms and sit behind Cloudflare bot detection.
 
+### 13.2a The correction: buy the export, don't scrape the site
+
+Screener.in Premium (**₹4,999/year, incl. GST**) includes **CSV export of any custom screen, up to 50 columns, covering every matching company**. There is no official Screener API — the export *is* the vendor's sanctioned bulk path, a product they sell rather than a workaround, which is a fundamentally stronger position than any scraper.
+
+This one change:
+- **replaces EODHD** at ~1/12th the cost (§13);
+- **closes the promoter/shareholding gap** that global vendors fill poorly, because Screener is India-native;
+- **strengthens §16.6** — a dated, hashed CSV is a better immutable snapshot than an API that can be revoked or re-stated.
+
+The earlier blanket exclusion of Screener.in conflated *the site's ban on automated scraping* with *the vendor's own paid export product*. They are not the same thing, and the conflation cost this plan roughly 12× on its largest data line item.
+
+**The honest trade:** the export is manual, so the app cannot fetch its own fundamentals. §13.6 sets out why that is acceptable and what it obliges us to build.
+
 ### 13.3 Two gaps that change the design
 
 **(a) Promoter pledging has no affordable structured API.** This is a direct hit on a §5.4 fatal-flaw check. Options: parse quarterly shareholding-pattern XBRL from BSE/NSE (real work), or **demote pledging from an automated Stage 2 block to a mandatory LLM-verified Stage 3 item** that fails closed when unresolvable. *Recommendation: start with the latter, build the parser only if pledging proves decisive in practice.*
 
-**(b) Analyst estimates are the ecosystem's biggest hole.** No free, comprehensive, structured consensus feed exists for Indian stocks. EODHD's `EarningsTrend` covers analyst-covered names only; Trendlyne StratQ (~₹492/month) is the practical paid step-up. **This constrains Track B**, which leans on earnings revisions — so Track B's screens should favour *reported* inflection (actual QoQ/YoY acceleration, margin turns, deleveraging) over *estimate revisions*. Design around the gap rather than paying to half-fill it.
+**(b) Analyst estimates are the ecosystem's biggest hole.** No free, comprehensive, structured consensus feed exists for Indian stocks. **Verified: neither Screener nor Tijori carries true consensus.** Screener exposes a sparsely-populated "expected EPS" field of unclear provenance, and many community "forward P/E" screens are merely *annualised latest-quarter EPS* — extrapolation presented as forecast. Tijori is entirely backward-looking. Trendlyne StratQ (~₹492/month) remains the only practical paid step-up, and would roughly **double** the stack's cost (§13) to satisfy one clause.
+
+**Design around the gap rather than paying to half-fill it.** Note that a *sparse* estimate field is actively worse than none: it excludes companies for lacking an estimate rather than for failing a test, silently biasing the screen toward analyst-covered largecaps — the exact opposite of what Kedia SMILE hunts. **This is now implemented, not merely recommended:** §5.3's Davis screen tests *reported* acceleration (QoQ/YoY, TTM vs prior TTM), and the forward-EPS clause has been removed — a clause whose own implied-return formula never consumed a forward number in the first place.
 
 ### 13.4 Mandatory validation spike before Phase 1 builds on any of this
-EODHD documents that "minor companies have last 6 years and 20 quarters" — for sub-₹500cr names, coverage may be holed. **Test EODHD against 50–100 known Indian smallcaps and measure field-level completeness before committing the wide screen to it.** Also verify stockinsights.ai India pricing and Tijori Stack's bulk-throughput limits, neither of which is published. If EODHD fails the spike, Tijori is the fallback.
+**Test Screener Premium's export against the full Stage 1/Stage 2 formula set before building on it.** Four checks:
+
+- **(a) Column ceiling.** Confirm 50 columns can carry every field §5.3/§5.4 needs — in particular Greenblatt's `ROC` components (EBIT; net working capital ex-excess-cash, ex-short-term-debt; net fixed assets ex-goodwill) and enterprise value, using Screener's custom-ratio support where no native column exists. **This is the binding constraint on the whole design** — if 50 columns cannot express Greenblatt, the hard block in §5.4 has to change, not the budget.
+- **(b) Shareholding fields.** Confirm promoter holding, pledge % and 3-year holding trend export cleanly, since these gate both tracks and three §5.4 blocks (§13.3a).
+- **(c) Export reuse terms.** Read Screener's terms on what may be done with a downloaded CSV. Export is confirmed a paid first-party feature; the *reuse* clause has not yet been read, and §13.2a's argument depends on it.
+- **(d) Smallcap completeness.** Measure field-level completeness on 50–100 known Indian smallcaps. Sub-₹500cr coverage is where every provider holes, and it is exactly where Track B hunts.
+
+If the export fails (a) or (c), the fallback is a paid bulk API (EODHD-class) at ~12× the cost — and that trade should be re-argued explicitly, not defaulted into.
 
 ### 13.5 Fixed points
 - **Kite Connect provides no fundamentals whatsoever.** Free "Personal" plan has no market data; **₹500/month** adds 10-year historical candles and live streaming (historical stopped being a paid add-on in Feb 2025).
 - **No sandbox exists.** Every order is live (§7.2).
+- **There is no official Screener API.** The paid CSV export is the sanctioned bulk path, and it is human-triggered (§13.6).
+
+### 13.6 Operating model: the export is manual, and that is acceptable
+
+Screener's export is human-triggered — you log in, run the universe query, download the CSV, drop it in. **The app cannot fetch its own fundamentals.** Three consequences, one of which is a build requirement:
+
+- **Cadence is sufficient, not compromised.** Fundamentals change 4×/year at results; holding periods are 2–3 years (Track B) and 5+ (Track A) per §4; and §5.7 makes inactivity the intended state. **2–4 refreshes per year is enough.** A continuously-polling pipeline would buy freshness this strategy cannot use.
+- **Staleness guard — hard requirement.** Every dossier carries its snapshot date, and **the app must refuse to generate a dossier from a snapshot older than a configured threshold.** A number's *age* is part of its provenance (§5.5). Silent staleness is the one new failure mode this design introduces, so it gets an explicit block rather than a warning.
+- **Single-source risk, mitigated deep rather than wide.** Fundamentals now come from one vendor, and §5.4's hard blocks have no override. Rather than paying a second vendor to cover 2,000 names of which you act on a handful, **cross-validate against BSE XBRL only for the ~20–30 names that reach Stage 3** — free, low-volume, and it checks the numbers that actually drive a buy. This is deliberately *not* the market-wide XBRL pipeline that §14 rules out.
 
 ---
 
@@ -401,7 +450,7 @@ EODHD documents that "minor companies have last 6 years and 20 quarters" — for
 3. **Scheduling** — on-demand runs, or a scheduled weekly screen with alerts?
 4. **Review surface** — plain markdown in the Copilot app, or a small local web UI?
 5. **Cost ceiling per pipeline run** — the deep-dive stage is the expensive one; needs a hard budget cap.
-6. **Snapshot immutability** — how to guarantee a dossier can be regenerated from the exact data that produced it.
+6. **Snapshot immutability** — **largely resolved** by §13.2a/§13.6: the Screener CSV export *is* the immutable artifact, so a dated, hashed, version-controlled export makes any Stage 1a run exactly reproducible. Two questions remain: where snapshots live (git LFS vs object store), and **how Stage 1b's per-company history lookups are captured with equal fidelity** — those are not in the CSV, so they need their own provenance record.
 
 ---
 
