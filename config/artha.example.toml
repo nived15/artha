@@ -36,6 +36,11 @@ active_sleeve_start_pct = 0.05
 [budget]
 # Per-dossier Agent Factory ceilings (implementation_plan.md §16 Q5).
 # Soft/post-paid — log actual spend regardless (see artha.journal).
+# Real Track A dossier run (implementation_plan.md §8, 2026-08-30): ~300 AI
+# credits for one clean 17-subagent run (8 framework sections + 8 citation
+# verifications + 1 narrative assembly). The 5.0 default below is a
+# placeholder from before any real run existed — override it per-invocation
+# (or raise it here) until a firmer number is established across more runs.
 max_ai_credits_per_dossier = 5.0
 max_concurrent_subagents = 5
 max_total_subagents = 20
