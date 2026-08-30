@@ -191,6 +191,42 @@ _MIGRATIONS: list[tuple[int, str, str]] = [
         );
         """,
     ),
+    (
+        5,
+        "phase2_screen_results_index",
+        """
+        -- Queryable index over `artha screen` runs (Phase 2). Previously
+        -- a shortlist/excluded/pending outcome only existed transiently in
+        -- the CLI's own console output and inside one `screen_run`
+        -- journal event's JSON payload -- unlike snapshots, filings, and
+        -- dossiers, there was no dedicated table to list a past shortlist
+        -- from. One row per (screen_run_id, ticker); screen_run_id groups
+        -- every row from a single `artha screen` invocation.
+        CREATE TABLE IF NOT EXISTS screen_results (
+            screen_run_id                TEXT NOT NULL,
+            ticker                       TEXT NOT NULL,
+            track                        TEXT NOT NULL,   -- 'A' or 'B'
+            source                       TEXT NOT NULL,   -- snapshot source label
+            arithmetic_profile           TEXT NOT NULL,
+            snapshot_id                  TEXT NOT NULL REFERENCES snapshots (snapshot_id),
+            status                       TEXT NOT NULL,   -- 'shortlisted' | 'excluded' | 'pending'
+            cleared_stage1               INTEGER NOT NULL,  -- 0/1
+            exclusion_reasons_json       TEXT NOT NULL,
+            pending_stage3_items_json    TEXT NOT NULL,
+            insufficient_data_fields_json TEXT NOT NULL,
+            greenblatt_combined_rank     INTEGER,
+            greenblatt_percentile        REAL,
+            rank_order                   INTEGER NOT NULL,  -- position within this run's own sort order
+            created_at                   TEXT NOT NULL,
+            PRIMARY KEY (screen_run_id, ticker)
+        );
+
+        CREATE INDEX IF NOT EXISTS idx_screen_results_run_status
+            ON screen_results (screen_run_id, status, rank_order);
+        CREATE INDEX IF NOT EXISTS idx_screen_results_ticker
+            ON screen_results (ticker, track, created_at);
+        """,
+    ),
 ]
 
 

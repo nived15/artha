@@ -1,0 +1,79 @@
+GANESH GREEN BHARAT LIMITED (NSE: GGBL, "GGBL")
+Business overview and industry structure
+
+Source: web research synthesizing GGBL's corporate site (ganeshgreen.com),
+Trendlyne's company-profile page, stockanalysis.com's company profile, and
+Multibagg.ai's FY26 write-up. Captured via web research on 2026-08-30.
+
+BUSINESS DESCRIPTION
+
+Ganesh Green Bharat Limited is described as a diversified renewable-energy
+and infrastructure company listed on the NSE. Its core business is solar
+EPC (Engineering, Procurement, and Construction) plus in-house solar
+photovoltaic (PV) module manufacturing:
+
+- Solar EPC: design, procurement, and deployment of both ground-mounted and
+  rooftop solar power systems for government and industrial clients.
+- PV Module Manufacturing: an automated module factory with current
+  capacity of 1.1 GW, with stated plans to expand to 2 GW by 2027.
+- Government Scheme Execution: solar water pumping systems under the
+  PM-KUSUM scheme, and solar street lighting.
+- Battery/Storage: manufacture of lithium-ion cells, including cells used
+  in electric vehicles and energy-storage applications.
+- Other Infrastructure Segments: electrical contracting (transmission and
+  distribution lines, substations, street lighting) and water-supply-scheme
+  projects under the Jal Jeevan Mission.
+
+The company is described as using an asset-light EPC approach: it focuses
+on project management, engineering, and procurement, outsourcing much of
+the labor-intensive execution work. Its stated competitive advantage is
+expertise in government tenders and decentralized, rural solar execution
+(e.g. solar water pumps), which is described as a differentiated niche
+relative to larger, more urban-focused solar EPC players.
+
+INDUSTRY STRUCTURE
+
+The Indian solar EPC/module-manufacturing sector is described as benefiting
+from sustained government policy tailwinds: India's push for domestic
+solar-module manufacturing (import-substitution policy), continued
+government focus on renewable-energy capacity addition, rural
+electrification programs, and decentralized solar-pump schemes (PM-KUSUM).
+Competitive dynamics: the sector includes large, well-capitalized EPC
+players as well as smaller regional players; GGBL's stated niche is
+decentralized/rural execution and government-tender expertise rather than
+head-to-head competition with the largest utility-scale EPC contractors.
+
+FY2026 SCALE AND ORDER BOOK
+
+Per secondary-source reporting (Multibagg.ai's FY26 write-up and
+stockanalysis.com): FY26 revenue reported at approximately Rs 1,064 crore,
+described as a roughly 3x increase over FY25. PAT reported at approximately
+Rs 75.18 crore, versus approximately Rs 30.22 crore in FY25. FY26 EBITDA
+margin reported at approximately 10.67%, net margin at approximately 7.06%
+-- both markedly lower than the Stage 1a snapshot's OPM figure of 10.43%
+for the trailing-3-year-average period, which is broadly consistent
+(single-digit operating margins are typical of EPC/contracting business
+models, unlike asset-light services businesses). The company's total
+secured order book is reported at approximately Rs 2,212 crore as of FY26,
+described as nearly twice its annual revenue, providing forward revenue
+visibility.
+
+STRATEGIC INITIATIVES
+
+Per secondary-source reporting, the company is pursuing diversification
+into battery energy storage EPC and EV-charging infrastructure, alongside
+larger-scale ground-mounted solar projects. It holds ISO 9001:2015 (Quality)
+and ISO 14001:2015 (Environment) certifications, and is stated to have BIS
+compliance for its manufactured products. Reported headcount is over 150
+permanent employees, with significant reliance on contract staffing for
+field execution -- a structural feature of asset-light EPC business models
+that increases execution flexibility but also means a large share of
+delivery capability is not directly controlled/owned.
+
+CAVEAT: This document is built from secondary web sources (corporate
+website content and financial-portal/analyst summaries), not a direct,
+independently-parsed read of the primary annual report PDF, DRHP, or
+exchange-filed order-book disclosures verbatim. The FY26 revenue/PAT
+figures above are as reported by a single secondary analyst write-up
+(Multibagg.ai) and were not independently cross-verified against a second,
+independent primary source in this research pass.

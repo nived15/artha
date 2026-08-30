@@ -1,0 +1,54 @@
+GANESH GREEN BHARAT LIMITED (NSE: GGBL)
+Financial highlights and Stage 1a reconciliation
+
+Source: Stage 1a Screener snapshot (screener_exports/artha-profile-1-validation.csv,
+captured 2026-08-30) plus secondary web research (stockanalysis.com,
+trendlyne.com, Multibagg.ai FY26 write-up). Captured 2026-08-30.
+
+STAGE 1A SNAPSHOT FIGURES (screener_profile1, snapshot_id
+a0d7e35e3abb34602e52ac01075992c76e302178919722d74cb3769f8ad75198):
+Market Capitalization Rs 557.77 crore; Current Price (as of capture) implied
+by mcap; Return on Capital Employed (ROCE) 36.81%; Return on Equity (ROE)
+31.76%; Debt-to-Equity 0.18; Operating Profit Margin (OPM) 10.43%; 3-year
+sales growth 131.95%; 3-year profit growth 109.78%; Price-to-Earning (P/E)
+7.42x; Artha PEG 0.07; EBIT Rs 11.51 crore (implied from Greenblatt ranking
+inputs); Enterprise Value figure used for the Greenblatt earnings-yield
+computation; Promoter holding 73.42%; Promoter pledge 0.00%; 3-year
+promoter-holding trend not available in this export (reported as null,
+not assumed flat).
+
+SECONDARY-SOURCE FY26 FIGURES (reported by Multibagg.ai and
+stockanalysis.com, NOT independently read from the primary annual report):
+FY26 revenue approximately Rs 1,064 crore (approximately 3x the FY25
+figure); FY26 PAT approximately Rs 75.18 crore, versus approximately Rs
+30.22 crore in FY25 (approximately 149% YoY PAT growth on this
+secondary-sourced figure); FY26 EBITDA margin approximately 10.67%; FY26 net
+margin approximately 7.06%. Total secured order book approximately Rs 2,212
+crore as of FY26, described as providing revenue visibility of nearly 2x
+current annual revenue.
+
+RECONCILIATION NOTE: the Stage 1a OPM (10.43%, described as a trailing
+multi-period average) and the secondary-sourced FY26 EBITDA margin
+(10.67%) are broadly consistent with each other (both describe a
+single-digit-to-low-double-digit margin typical of an EPC/contracting
+business model), which is a plausibility cross-check the ECORECO
+precedent dossier flagged explicitly -- here the two independent figures
+corroborate rather than conflict, which is itself worth noting.
+
+NOT AVAILABLE in this Profile 1 snapshot (and not found in secondary
+research either): OCF/PAT, gross margin (distinct from OPM), interest
+coverage, FCF conversion %, current ratio, price-to-book, a verified 5-year
+PAT CAGR or EPS-decline history, and dividend record (secondary sources
+report no dividend payout to date). A single-source, not independently
+cross-verified, FY26 vs FY25 PAT comparison is the only multi-period
+profit data point found; this is explicitly flagged as thin (one
+secondary source, one year-over-year comparison) rather than a genuine
+multi-year track record.
+
+GROWTH-QUALITY CAVEAT: the Stage 1a 3-year growth figures (131.95% sales,
+109.78% profit) and the secondary-sourced FY26 "3x revenue jump" both
+describe extremely rapid, likely low-base-effect growth for a company that
+appears to have scaled from a small revenue base to roughly Rs 1,064 crore
+within a few years. This kind of percentage growth is structurally easier
+to sustain briefly from a small base than indefinitely at the same rate --
+flagged here explicitly rather than extrapolated forward at face value.

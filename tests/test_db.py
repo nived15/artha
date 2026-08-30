@@ -8,8 +8,8 @@ def test_apply_migrations_creates_schema(tmp_path):
     conn = connect(db_path)
     try:
         applied = apply_migrations(conn)
-        assert applied == [1, 2, 3, 4]
-        assert current_schema_version(conn) == 4
+        assert applied == [1, 2, 3, 4, 5]
+        assert current_schema_version(conn) == 5
 
         tables = {
             row[0]
@@ -30,6 +30,7 @@ def test_apply_migrations_creates_schema(tmp_path):
             "tax_lots",
             "realized_gains",
             "benchmark_nav",
+            "screen_results",
         }.issubset(tables)
     finally:
         conn.close()
@@ -44,7 +45,7 @@ def test_apply_migrations_is_idempotent(tmp_path):
     try:
         first = apply_migrations(conn)
         second = apply_migrations(conn)
-        assert first == [1, 2, 3, 4]
+        assert first == [1, 2, 3, 4, 5]
         assert second == []  # nothing new to apply
     finally:
         conn.close()

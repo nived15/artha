@@ -1,0 +1,53 @@
+ECO RECYCLING LIMITED (BSE: 530643, "Ecoreco")
+Shareholding pattern and promoter/management identity
+
+Source: shareholding-pattern and company-registry aggregators (Trendlyne,
+MarketScreener, TheCompanyCheck, ZaubaCorp), which republish the company's
+quarterly shareholding-pattern disclosures and public company-registry
+(MCA/ROC) records. Captured via web research on 2026-08-30; figures
+described as "as of the latest quarter (June 2026)" in the aggregator
+sources.
+
+PROMOTER IDENTITY
+
+The named promoter group comprises: Ecoreco Ventures Pvt Ltd (holding
+52.19%), Brijkishore K. Soni (15.13%), and Aruna Soni (6.03%). Management
+is led by Brijkishore K. Soni (Managing Director), with Aruna Soni and
+Shashank Soni also named in company records. The company's registered CIN
+(L74120MH1994PLC079971, per public registry aggregators) indicates
+incorporation in 1994 — a long-tenured, family-promoter-run listed company,
+not a recent listing.
+
+SHAREHOLDING PATTERN (quarter ending June 2026, per aggregator sources)
+
+Total promoter holding: 73.35%.
+Promoter pledge: 0% (no shares reported as pledged).
+FII/FPI holding: reported as having decreased to approximately 0.25%.
+
+TREND
+
+Promoter holding is reported as stable at 73.35%, consistent with this
+codebase's own ingested Stage 1a snapshot
+(screener_exports/artha-profile-1-validation.csv, captured 2026-08-30):
+promoter_holding_pct = 73.35, promoter_pledge_pct = 0.00,
+promoter_holding_trend_3y = 0.00 (flat — neither rising nor declining over
+the trailing 3 years).
+
+RELATED-PARTY DISCLOSURE
+
+Aggregator sources state that Ecoreco "regularly publishes RPT disclosures
+in line with stock exchange requirements," and name specific related
+group/associate entities: Ecoreco Park Pvt Ltd and Ecoreco Enviro
+Education Pvt Ltd. No SEBI show-cause order, adverse regulatory action, or
+auditor resignation was found referenced anywhere in the sources consulted
+for this research.
+
+CAVEAT: The specific rupee quantum, terms, and nature of the related-party
+transactions with the two named entities above were NOT independently
+obtained from the primary annual report's RPT note in this research pass
+(direct fetch attempts at ecoreco.com returned only page
+metadata/boilerplate, not the underlying filing text). Likewise, auditor
+identity, tenure, and audit-opinion status were not independently
+confirmed. These are explicitly carried into the dossier's Provenance
+section (§14, could_not_verify) rather than treated as a fully verified
+clean result.

@@ -139,12 +139,17 @@ not expect a Profile 3 CSV export to exist.
 
 **Spike closed.** All five checks are now resolved — (a)/(b)/(d) confirmed
 against real Profile 1 data, (c) is a recorded human judgment call, (e)
-resolved both sector profiles to Stage 1b. Phase 1's remaining open item is
-purely a config-completeness one, not a design question: `config/
-screener_field_map.toml`'s Phase 2-only fields (`ocf_to_pat`,
-`profit_growth_5y`, etc. — not part of this spike's required-field set)
-still need real column confirmation once an export including those columns
-exists.
+resolved both sector profiles to Stage 1b. `config/screener_field_map.toml`'s
+Phase 2-only fields (not part of this spike's required-field set) were
+subsequently confirmed too, against a later, richer export
+(`screener_exports/financial-services.csv`, re-exported 2026-08-30 with
+additional custom ratios): `price_to_book`, `profit_growth_5y`,
+`eps_growth_ttm_yoy`, `eps_growth_latest_q_yoy`, `interest_coverage`,
+`fcf_conversion_pct`, `dividend_yield_pct`, and `sector` all resolve at
+72.8-100% completeness. Four Phase 2 fields remain genuinely unconfirmed
+(`ocf_to_pat`, `gross_margin`, `years_since_incorporation`,
+`analyst_coverage_count`) — see `config/screener_field_map.toml` for why
+each one specifically can't be filled in without guessing.
 
 **Fallback condition (§13.4):** if a real export shows the column ceiling
 or reuse terms fail, the fallback is a paid bulk API (EODHD-class, ~12x

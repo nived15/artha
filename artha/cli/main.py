@@ -40,6 +40,7 @@ from artha.ledger.scorecard import (
 from artha.ledger.tax_lots import SellDisciplineError, record_buy, record_sell
 from artha.screening.loader import build_company_records
 from artha.screening.pipeline import screen_track_a, screen_track_b
+from artha.screening.results_store import get_screen_results, list_screen_runs, record_screen_run
 from artha.secrets import SecretNotFoundError, delete_secret, has_secret, set_secret
 
 DEFAULT_CONFIG_PATH = "config/artha.toml"
@@ -594,9 +595,14 @@ def agent_tools_list_candidate_chunks(ticker: str, topic: str | None, config_pat
 def agent_tools_validate_dossier() -> None:
     """Validate a dossier draft (JSON on stdin) without writing it. Prints JSON {passed, errors}."""
     try:
-        draft = json.loads(sys.stdin.read())
+        # Read raw bytes and decode as UTF-8 explicitly — sys.stdin.read()
+        # decodes using the platform's default encoding, which on Windows
+        # is often the ANSI codepage rather than UTF-8 when stdin is piped
+        # from a subprocess, silently corrupting any non-ASCII character
+        # (e.g. "§", "—", "₹") into mojibake before json.loads ever sees it.
+        draft = json.loads(sys.stdin.buffer.read().decode("utf-8"))
         dossier = dossier_from_dict(draft)
-    except (json.JSONDecodeError, DossierSchemaError) as exc:
+    except (json.JSONDecodeError, UnicodeDecodeError, DossierSchemaError) as exc:
         click.echo(json.dumps({"passed": False, "errors": [{"section": "draft", "reason": str(exc)}]}))
         sys.exit(1)
 
@@ -629,9 +635,11 @@ def agent_tools_write_dossier(
     extension's read-only tool surface never exposes a write path.
     """
     try:
-        draft = json.loads(sys.stdin.read())
+        # See agent_tools_validate_dossier's comment: decode stdin bytes as
+        # UTF-8 explicitly rather than trusting the platform default.
+        draft = json.loads(sys.stdin.buffer.read().decode("utf-8"))
         dossier = dossier_from_dict(draft)
-    except (json.JSONDecodeError, DossierSchemaError) as exc:
+    except (json.JSONDecodeError, UnicodeDecodeError, DossierSchemaError) as exc:
         click.echo(json.dumps({"error": str(exc)}))
         sys.exit(1)
 
@@ -708,11 +716,21 @@ def screen(source: str, profile: str, track: str, config_path: str) -> None:
         excluded = [c for c in results if c.excluded]
         pending = [c for c in results if not c.excluded and not c.cleared_stage1]
 
+        screen_run_id = record_screen_run(
+            conn,
+            results,
+            track=track,
+            source=source,
+            arithmetic_profile=profile,
+            snapshot_id=record.snapshot_id,
+        )
+
         Journal(conn).append(
             event_type="screen_run",
             entity_type="snapshot",
             entity_id=record.snapshot_id,
             payload={
+                "screen_run_id": screen_run_id,
                 "track": track,
                 "source": source,
                 "profile": profile,
@@ -726,6 +744,7 @@ def screen(source: str, profile: str, track: str, config_path: str) -> None:
     finally:
         conn.close()
 
+    click.echo(f"screen_run_id: {screen_run_id}")
     click.echo(
         f"universe: {len(company_records)}  shortlist: {len(shortlist)}  "
         f"excluded: {len(excluded)}  pending (insufficient Stage 1a data): {len(pending)}"
@@ -742,6 +761,61 @@ def screen(source: str, profile: str, track: str, config_path: str) -> None:
         click.echo("pending — insufficient Stage 1a data (not excluded, not shortlisted):")
         for c in pending:
             click.echo(f"  {c.ticker}: missing {list(c.insufficient_data_fields)}")
+
+
+@cli.group("screen-results")
+def screen_results_group() -> None:
+    """Query persisted `artha screen` runs (Phase 2) without re-running the screen."""
+
+
+@screen_results_group.command("list-runs")
+@click.option("--track", type=click.Choice(["A", "B"]), default=None)
+@click.option("--source", default=None)
+@click.option("--config", "config_path", default=DEFAULT_CONFIG_PATH, show_default=True)
+def screen_results_list_runs(track: str | None, source: str | None, config_path: str) -> None:
+    """List past screen runs (most recent first), with aggregate counts."""
+    app_config = _load_config_or_default(config_path)
+    conn = connect(app_config.db_path)
+    try:
+        apply_migrations(conn)
+        runs = list_screen_runs(conn, track=track, source=source)
+    finally:
+        conn.close()
+    if not runs:
+        click.echo("no screen runs recorded yet — run 'artha screen' first.")
+        return
+    for r in runs:
+        click.echo(
+            f"{r.screen_run_id}  track={r.track}  source={r.source}  profile={r.arithmetic_profile}  "
+            f"created_at={r.created_at}  universe={r.universe_size}  shortlist={r.shortlist_size}  "
+            f"excluded={r.excluded_size}  pending={r.pending_size}"
+        )
+
+
+@screen_results_group.command("show")
+@click.argument("screen_run_id")
+@click.option("--status", type=click.Choice(["shortlisted", "excluded", "pending"]), default="shortlisted", show_default=True)
+@click.option("--config", "config_path", default=DEFAULT_CONFIG_PATH, show_default=True)
+def screen_results_show(screen_run_id: str, status: str, config_path: str) -> None:
+    """List the tickers (and their reasons) for one status within a past screen run."""
+    app_config = _load_config_or_default(config_path)
+    conn = connect(app_config.db_path)
+    try:
+        apply_migrations(conn)
+        rows = get_screen_results(conn, screen_run_id, status=status)
+    finally:
+        conn.close()
+    if not rows:
+        click.echo(f"no '{status}' rows found for screen_run_id={screen_run_id}")
+        return
+    for row in rows:
+        if status == "shortlisted":
+            rank_note = f" (Greenblatt combined-rank percentile={row.greenblatt_percentile:.1f})" if row.greenblatt_percentile is not None else ""
+            click.echo(f"  {row.ticker}{rank_note}")
+        elif status == "excluded":
+            click.echo(f"  {row.ticker}: {'; '.join(row.exclusion_reasons)}")
+        else:
+            click.echo(f"  {row.ticker}: missing {list(row.insufficient_data_fields)}")
 
 
 @cli.command()

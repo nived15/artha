@@ -172,6 +172,17 @@ artha screen --source screener_profile1 --track A
 Use `rank` to decide what to research, and `screen` to ask "which specific
 rules would this name have failed."
 
+Every run is persisted to a queryable `screen_results` table (not just
+printed and journaled) — list past runs or re-list a shortlist without
+re-running the screen:
+
+```powershell
+artha screen-results list-runs
+artha screen-results show <screen_run_id> --status shortlisted
+artha screen-results show <screen_run_id> --status excluded
+artha screen-results show <screen_run_id> --status pending
+```
+
 Checks the plan itself assigns to Stage 1b (multi-year own-history: sustained
 10-year ROE/ROIC, the 10-year earnings-deficit record, Davis's own-5-year P/E
 tercile) or Stage 3 (qualitative judgment: scuttlebutt, business
@@ -309,13 +320,28 @@ numbers quietly changing.
 | 2 — screening + hard blocks, and the `rank` engine rebuild | Complete |
 | 2.5 — dossier schema, validator, renderer, storage | Complete |
 | 3a — agent harness: extension, agents, skills, factory | Complete |
-| 3 — real dossiers generated end to end | Not started |
+| 3 — real dossiers generated end to end | 5 dossiers produced manually via the harness; factory fan-out not yet unattended |
 | 4 — paper ledger + scorecard | Built; ongoing data entry |
 | 5-6 — monitoring, Kite execution | Not started |
 
 Open engine work: making `quality_score` profile-aware for lenders, and
 calibrating the formula coefficients against point-in-time history — the
 walk-forward harness in `artha/backtest/` is built and waiting on data.
+
+**Milestone:** one real, fully-cited dossier has been produced end-to-end —
+**Eco Recycling Limited** (NSE: ECORECO), Track A —
+[`dossiers/Eco Recyc/run-ecoreco-20260830-001.md`](<dossiers/Eco Recyc/run-ecoreco-20260830-001.md>).
+Both gates passed honestly and the QGLP score (6/12) correctly reflects a
+statistically expensive stock with real, unresolved diligence gaps rather
+than an inflated buy case. It was assembled by manually following each
+`.github/agents/*.md` role in turn — the factory's own fan-out
+(`run_factory("artha-dossier")`) is registered but not yet fully wired for
+an unattended end-to-end run. Four more dossiers exist alongside it in
+`dossiers/`. The run surfaced and fixed two real bugs: `agent-tools`
+commands decoded stdin with the platform default encoding instead of UTF-8
+(mojibake on Windows for any non-ASCII citation text), and ticker names
+ending in a period (e.g. "Eco Recyc.") silently lost that period in the
+dossier directory path on Windows. Both have regression tests.
 
 Detailed per-phase exit criteria live in [`plan.md`](plan.md) §11 and
 [`implementation_plan.md`](implementation_plan.md) §3. Phase 1's empirical

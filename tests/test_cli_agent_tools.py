@@ -140,3 +140,33 @@ def test_write_dossier_tool_writes_and_indexes(tmp_path, monkeypatch):
     payload = json.loads(result.output)
     assert payload["validation_passed"] is True
     assert (tmp_path / "dossiers" / "ALPHA" / "run-1.md").is_file()
+
+
+def test_write_dossier_tool_preserves_non_ascii_stdin(tmp_path, monkeypatch):
+    """Regression test: piped stdin must be decoded as UTF-8, not the
+    platform default (cp1252 on Windows), or non-ASCII characters like
+    "§" get corrupted into mojibake before json.loads ever sees them."""
+    from tests.conftest import dossier_to_dict, make_valid_dossier
+    import dataclasses
+
+    monkeypatch.chdir(tmp_path)
+    config_path, csv_path = _setup(tmp_path)
+    runner = CliRunner()
+    import_result = runner.invoke(cli, ["data", "import-screener", str(csv_path), "--source", "s1", "--config", str(config_path)])
+    snapshot_id = [line for line in import_result.output.splitlines() if line.startswith("snapshot_id:")][0].split(": ")[1]
+
+    dossier = make_valid_dossier("A")
+    dossier = dataclasses.replace(dossier, identity=dataclasses.replace(dossier.identity, snapshot_id=snapshot_id))
+    draft = dossier_to_dict(dossier)
+    non_ascii = "See plan.md §6 for the citation rule; ₹1.25 lakh exemption; an em dash — here."
+    draft["why_now"]["content"] = non_ascii
+    draft_json_bytes = json.dumps(draft).encode("utf-8")
+
+    result = runner.invoke(
+        cli,
+        ["agent-tools", "write-dossier", "--run-id", "run-2", "--config", str(config_path)],
+        input=draft_json_bytes,
+    )
+    assert result.exit_code == 0, result.output
+    written = (tmp_path / "dossiers" / "ALPHA" / "run-2.md").read_text(encoding="utf-8")
+    assert non_ascii in written

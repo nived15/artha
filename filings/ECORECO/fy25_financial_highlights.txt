@@ -1,0 +1,46 @@
+ECO RECYCLING LIMITED (BSE: 530643, "Ecoreco")
+FY2025 financial highlights and management commentary
+
+Source: web research (India Infoline Directors' Report summary, Trendlyne,
+Multibagger Hunt Q2 FY25 write-up) synthesizing figures reported in
+Ecoreco's FY2025 annual report and a Q4 FY2024 earnings concall (held
+2024-05-15, per secondary reporting). Captured via web research on
+2026-08-30; not a direct read of the primary annual report PDF.
+
+FY2025 FINANCIAL HIGHLIGHTS (as reported by secondary sources)
+
+Revenue from operations: approximately Rs 43.96 crore.
+Profit After Tax: approximately Rs 23.37 crore.
+Operating EBITDA margin: reported as "~70%+".
+Revenue and profit growth described as having shown a "robust" CAGR over
+the trailing three years (directionally consistent with this codebase's
+own ingested Stage 1a snapshot figures below).
+
+CROSS-CHECK AGAINST SCREENER.IN PREMIUM EXPORT
+
+This codebase's own ingested Stage 1a snapshot
+(screener_exports/artha-profile-1-validation.csv, captured 2026-08-30)
+reports, for "Eco Recyc.": OPM (operating profit margin) = 59.41%, ROCE =
+29.97%, ROE = 23.29%, Debt-to-equity = 0.05 (near debt-free), 3-year sales
+growth = 39.52%, 3-year profit growth = 78.14%, P/E = 37.57x. The OPM
+figure (59.41%) and the secondary-source "~70%+ EBITDA margin" figure are
+not identical — plausibly reflecting different periods, or margin vs.
+EBITDA-margin definitional differences — but both indicate the same
+directional fact: an unusually high-margin business relative to a typical
+industrial/recycling operation. This document does not attempt to
+reconcile the two figures precisely.
+
+MANAGEMENT COMMENTARY (Q4 FY2024 concall, per secondary summary)
+
+The company's most recently reported earnings call (Q4 FY2024, dated
+2024-05-15 per secondary reporting) is described as having highlighted:
+revenue growth, a management focus on profitability/high-margin business
+mix, targets to increase capacity utilization, and an expectation of
+higher EPR (Extended Producer Responsibility) compliance fee revenue
+going forward.
+
+CAVEAT: No concall transcript was independently obtained or read verbatim
+in this research pass — the above is a secondary summary of what such
+commentary is reported to have covered, not a direct quote unless
+otherwise marked. No more recent (post-May-2024) concall was identified as
+having occurred in the sources consulted.

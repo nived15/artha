@@ -6,17 +6,21 @@
 # ratios, so this mapping is a per-user, editable artifact — not hardcoded
 # in the Python package.
 #
-# Copy this file to config/screener_field_map.toml and fill in the real
-# column headers from your own "Create New Screen" export (screener.in),
-# one section per §5.3a arithmetic profile. Names below are desk-research
-# best guesses (see docs/phase1_validation_spike.md) — confirm every one
-# against a real export before relying on it; anything marked <TODO> could
-# not be confirmed without an actual Screener Premium account and needs a
-# custom ratio or a different vendor column.
+# Copy this file to config/screener_field_map.toml and adjust if your own
+# export's column headers differ. Core + shareholding fields below are
+# confirmed against a real Screener Premium export
+# (screener_exports/artha-profile-1-validation.csv, 2026-08-30). Phase 2
+# fields were confirmed separately against a later, richer export
+# (screener_exports/financial-services.csv, 2026-08-30) that added several
+# custom ratios not present in the original Profile 1 export — column
+# *names* are a Screener platform property, not a per-screen one, so the
+# same mapping applies regardless of which profile's universe produced it.
+# Anything still marked <TODO> genuinely has no confirmed native field —
+# see docs/phase1_validation_spike.md for the full research trail.
 
 [profile_1_standard]
 market_cap = "Market Capitalization"
-price = "Current price"
+price = "Current Price"
 roce = "Return on capital employed"
 roe = "Return on equity"
 debt_to_equity = "Debt to equity"
@@ -24,10 +28,10 @@ opm = "OPM"
 sales_growth_3y = "Sales growth 3Years"
 profit_growth_3y = "Profit growth 3Years"
 pe_ratio = "Price to Earning"
-peg_ratio = "<TODO: no confirmed native field — try custom ratio 'Price to Earning / Profit growth 3Years', confirm against a real export>"
+peg_ratio = "Artha PEG"
 ebit = "EBIT"
-net_working_capital_ex_cash_ex_debt = "<TODO: custom ratio 'Current Assets - Current Liabilities'; Greenblatt's ex-excess-cash/ex-short-term-debt refinement needs the Cash and Investments fields split out — confirm on a real export (docs/phase1_validation_spike.md §2)>"
-net_fixed_assets_ex_goodwill = "Net Block"
+net_working_capital_ex_cash_ex_debt = "Artha NWC"
+net_fixed_assets_ex_goodwill = "Net block"
 enterprise_value = "Enterprise Value"
 promoter_holding_pct = "Promoter holding"
 promoter_pledge_pct = "Pledged percentage"
@@ -40,20 +44,66 @@ promoter_holding_trend_3y = "Change in promoter holding 3Years"
 #
 # OCF/PAT is deliberately absent: confirmed not exportable from Screener, so
 # cash conversion is a Stage 3 filing-review item, not a Stage 1a field.
+# Confirmed 2026-08-30 against screener_exports/financial-services.csv
+# (654 rows): price_to_book 94.6%, profit_growth_5y 74.8%,
+# eps_growth_ttm_yoy 97.6%, eps_growth_latest_q_yoy 96.2%,
+# interest_coverage 72.8%, fcf_conversion_pct 99.5%, dividend_yield_pct
+# 100%, sector 100%. ("Interest Coverage" and "Interest Coverage Ratio"
+# are two identically-valued columns in that export; picked the shorter
+# name — either resolves the same data.)
 current_ratio = "Current ratio"
-price_to_book = "<TODO: try 'Price to book value' or derive from 'Book value'>"
-profit_growth_5y = "<TODO: try 'Profit growth 5Years' (Phase 1 confirmed the 3Years variant only)>"
-eps_growth_ttm_yoy = "<TODO: no confirmed native field — likely needs a custom ratio against trailing four quarters>"
-eps_growth_latest_q_yoy = "<TODO: no confirmed native field — likely needs a custom ratio against the latest quarter>"
-gross_margin = "<TODO: try 'OPM' as a proxy, or a custom ratio (Sales - COGS) / Sales if a separate COGS field exists>"
-interest_coverage = "<TODO: try 'Interest coverage ratio'>"
-fcf_conversion_pct = "<TODO: custom ratio 'Free cash flow / Net profit' — needs FCF, not confirmed as a native field>"
-years_since_incorporation = "<TODO: not a Screener field — likely needs to be looked up separately per company>"
-analyst_coverage_count = "<TODO: not a Screener field — Screener's own 'expected EPS' sparsity is itself the low-coverage signal (plan.md §13.3b); no coverage-count column confirmed>"
-dividend_yield_pct = "<TODO: try 'Dividend yield'>"
-sector = "<TODO: try 'Industry' — used for sector-median P/E grouping (Davis Double Play)>"
+price_to_book = "Price to book value"
+profit_growth_5y = "Profit growth 5Years"
+eps_growth_ttm_yoy = "TTM EPS Growth vs Previous Year Annual YoY"
+eps_growth_latest_q_yoy = "YoY EPS growth in the latest quarter"
+gross_margin = "<TODO: still no separate gross-margin field confirmed (only OPM, which is operating margin — a different metric, already mapped to 'opm'); would need Sales/COGS split, not present>"
+interest_coverage = "Interest Coverage"
+fcf_conversion_pct = "FCF Conversion PCT"
+years_since_incorporation = "<TODO: still not a Screener field — needs a per-company lookup outside Screener>"
+analyst_coverage_count = "<TODO: still not a native count field. The 2026-08-30 export's 'Expected quarterly EPS' column is 67.4% complete (441/654) — its own sparsity is the low-coverage signal per plan.md §13.3b, but its *value* is an EPS estimate, not a count, so it cannot be mapped directly to this threshold-checked field (track_b.py compares analyst_coverage_count <= 2) without corrupting the comparison>"
+dividend_yield_pct = "Dividend yield"
+sector = "Industry"
 
 [profile_2_banking]
+# Confirmed against a real "Financial Services" export (Banks + NBFC +
+# Housing Finance + Capital Markets, screener_exports/financial-services.csv,
+# 2026-08-30, re-exported same day with additional custom ratios). Same
+# core/shareholding columns as profile_1_standard, plus the same Phase 2
+# fields (this export is in fact where those were confirmed — see above).
+market_cap = "Market Capitalization"
+price = "Current Price"
+roce = "Return on capital employed"
+roe = "Return on equity"
+debt_to_equity = "Debt to equity"
+opm = "OPM"
+sales_growth_3y = "Sales growth 3Years"
+profit_growth_3y = "Profit growth 3Years"
+pe_ratio = "Price to Earning"
+peg_ratio = "<TODO: NOT defined in this export — 'Artha PEG' is profile_1_standard's own custom ratio, not present here; confirmed absent 2026-08-30>"
+ebit = "EBIT"
+net_working_capital_ex_cash_ex_debt = "<TODO: NOT defined in this export — 'Artha NWC' is profile_1_standard's own custom ratio, not present here; confirmed absent 2026-08-30>"
+net_fixed_assets_ex_goodwill = "Net block"
+enterprise_value = "Enterprise Value"
+promoter_holding_pct = "Promoter holding"
+promoter_pledge_pct = "Pledged percentage"
+promoter_holding_trend_3y = "Change in promoter holding 3Years"
+
+# Phase 2 fields — confirmed against this same export (see profile_1_standard's
+# comment above for per-field completeness; identical here since it's the
+# same underlying export).
+current_ratio = "Current ratio"
+price_to_book = "Price to book value"
+profit_growth_5y = "Profit growth 5Years"
+eps_growth_ttm_yoy = "TTM EPS Growth vs Previous Year Annual YoY"
+eps_growth_latest_q_yoy = "YoY EPS growth in the latest quarter"
+interest_coverage = "Interest Coverage"
+fcf_conversion_pct = "FCF Conversion PCT"
+dividend_yield_pct = "Dividend yield"
+sector = "Industry"
+gross_margin = "<TODO: not a confirmed native field — see profile_1_standard>"
+years_since_incorporation = "<TODO: not a Screener field — see profile_1_standard>"
+analyst_coverage_count = "<TODO: not a native count field — see profile_1_standard>"
+
 # Confirmed absent from Screener (2026-08-30, real "Financial Services" export
 # covering Banks+NBFC): not addable as a column or a custom-ratio input.
 # Moves to Stage 1b — see docs/phase1_validation_spike.md §(e).

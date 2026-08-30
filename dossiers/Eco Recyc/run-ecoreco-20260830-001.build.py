@@ -1,0 +1,670 @@
+"""Reproducibility artifact for dossiers/Eco Recyc./run-ecoreco-20260830-001.md
+(implementation_plan.md Phase 3's first real, end-to-end dossier).
+
+Committed alongside the dossier (not deleted after use) so the exact
+research assembly is auditable and reproducible: this script + the three
+source documents in filings/ECORECO/*.txt are the actual inputs that
+produced run-ecoreco-20260830-001.json, which `artha agent-tools
+write-dossier` then validated and wrote as the .md file next to this one.
+
+Honest process note: this was a manually-orchestrated research pass (one
+session acting in turn as each specialized .github/agents/*.md role,
+consulting the .github/skills/* rubrics directly), not yet a real
+`artha-dossier` Agent Factory fan-out run (implementation_plan.md §4's
+`run_factory` path) -- the factory's `run()` in
+.github/extensions/artha-tools/extension.mjs still has a placeholder
+assembly step (see its own comments) that a future session should finish
+wiring so this same shape of output can be produced automatically. This
+script demonstrates the full harness contract (get_candidate ->
+list_candidate_chunks/get_filing_chunk for every citation -> per-section
+agent instructions from .github/agents/*.md -> validate_dossier ->
+write-dossier) working end-to-end for real, cited data, which is Phase 3's
+own exit bar for one dossier -- it just wasn't run through the factory's
+fan-out mechanism yet.
+"""
+import json
+
+SNAPSHOT_ID = "a0d7e35e3abb34602e52ac01075992c76e302178919722d74cb3769f8ad75198"
+RUN_ID = "run-ecoreco-20260830-001"
+TICKER = "Eco Recyc."
+
+def cit(doc_id, note, chunk_index=None):
+    n = note if chunk_index is None else f"{note} (chunk_index={chunk_index})"
+    return {"doc_id": doc_id, "page": 1, "note": n}
+
+BIZ0 = lambda n: cit("ECORECO_BUSINESS_OVERVIEW", n, 0)
+BIZ1 = lambda n: cit("ECORECO_BUSINESS_OVERVIEW", n, 1)
+BIZ2 = lambda n: cit("ECORECO_BUSINESS_OVERVIEW", n, 2)
+FIN0 = lambda n: cit("ECORECO_FY25_HIGHLIGHTS", n, 0)
+FIN1 = lambda n: cit("ECORECO_FY25_HIGHLIGHTS", n, 1)
+SH0 = lambda n: cit("ECORECO_SHAREHOLDING_GOVERNANCE", n, 0)
+SH1 = lambda n: cit("ECORECO_SHAREHOLDING_GOVERNANCE", n, 1)
+
+def section(title, content, citations=None):
+    return {"title": title, "content": content, "citations": citations or []}
+
+dossier = {}
+
+dossier["identity"] = {
+    "company": "Eco Recycling Limited",
+    "ticker": TICKER,
+    "sector": "Waste Management",
+    "arithmetic_profile": "profile_1_standard",
+    "track": "A",
+    "date": "2026-08-30",
+    "pipeline_run_id": RUN_ID,
+    "snapshot_id": SNAPSHOT_ID,
+}
+
+dossier["business_five_sentences"] = section(
+    "The business in five sentences",
+    (
+        "Eco Recycling Limited (\"Ecoreco\") is a vertically integrated Indian e-waste "
+        "management company, incorporated in 1994, that collects, data-destroys, "
+        "refurbishes, and recovers materials from end-of-life electronics, and helps "
+        "OEMs meet Extended Producer Responsibility (EPR) obligations under India's "
+        "E-Waste Management Rules, 2022. Its CPCB/MPCB-authorized, R2v3-certified "
+        "facility can process up to 31,200 metric tonnes per annum, a regulatory "
+        "certification most informal-sector recyclers cannot obtain. Revenue is earned "
+        "from EPR compliance service fees paid by OEMs/corporates, sale of recovered "
+        "metals and materials, and resale of refurbished IT equipment -- a services-plus-"
+        "materials-recovery model that reports an unusually high operating margin "
+        "(~59% per the ingested Stage 1a snapshot). The company competes against both "
+        "named formal-sector peers (EMS Ltd, the reported market leader, plus Antony "
+        "Waste Handling Cell, Concord Enviro Systems, and others) and a fragmented "
+        "informal/unlicensed recycling sector. It is family-promoter-controlled (the "
+        "Soni family and Ecoreco Ventures Pvt Ltd hold 73.35% of shares, unpledged and "
+        "stable), and is currently near debt-free."
+    ),
+    [BIZ0("business description, EPR model, certification/capacity"), BIZ1("named competitors, industry structure"), SH0("promoter identity and shareholding")],
+)
+
+dossier["why_now"] = section(
+    "Why now",
+    (
+        "Two concrete, cited catalysts: (1) India's E-Waste Management Rules, 2022 are "
+        "described as tightening enforcement of formal EPR compliance, which structurally "
+        "favors certified players like Ecoreco over informal-sector competitors -- an "
+        "ongoing regulatory tailwind, not a one-off event, so 'why now' is really 'why this "
+        "multi-year window,' and that should be weighed accordingly rather than read as "
+        "urgency. (2) The company's own FY2025 print shows a step-change in scale versus "
+        "its trailing history (39.52% 3-year sales growth, 78.14% 3-year profit growth, "
+        "ROCE of 29.97%), which is recent enough that the market's re-rating of it (if any) "
+        "is still unfolding rather than fully priced in over a long track record -- though "
+        "the P/E of 37.57x indicates the market has already priced in a meaningful amount "
+        "of continued growth, tempering how much of a genuine mispricing 'why now' actually "
+        "represents (see Valuation, §7)."
+    ),
+    [BIZ1("EPR enforcement described as tightening"), FIN0("FY25 growth figures and cross-check")],
+)
+
+dossier["three_things_must_be_true"] = section(
+    "The three things that must be true",
+    (
+        "1. EPR-driven demand must keep growing faster than informal-sector competition "
+        "can absorb, i.e. enforcement of the E-Waste Management Rules 2022 must continue "
+        "tightening rather than being diluted or under-enforced -- this is falsifiable: no "
+        "new OEM/corporate EPR contracts disclosed for several consecutive quarters, or a "
+        "regulatory rollback, would falsify it.\n"
+        "2. The company's very high reported operating margin (~59% per Stage 1a data, "
+        "~70%+ EBITDA margin per secondary FY25 reporting) must prove durable as the "
+        "business scales toward its stated 31,200 MT/annum capacity, not merely a function "
+        "of a small, favorable revenue mix at low absolute scale -- falsifiable via a "
+        "sustained OPM decline as revenue grows.\n"
+        "3. The named, long-tenured promoter family (Soni family, in control since at least "
+        "the company's 1994 incorporation per registry records) must continue operating "
+        "with the same clean shareholding profile (0% pledge, non-declining holding) and no "
+        "adverse RPT/auditor/SEBI finding -- falsifiable by any of those specific events."
+    ),
+    [],
+)
+
+dossier["financial_evidence"] = section(
+    "Financial evidence",
+    (
+        "From the ingested Stage 1a Screener snapshot (screener_exports/"
+        "artha-profile-1-validation.csv, captured 2026-08-30, snapshot_id above): "
+        "Market Capitalization Rs 902.41 crore; Current Price Rs 467.65; ROCE 29.97%; "
+        "ROE 23.29%; Debt-to-Equity 0.05 (near debt-free); OPM 59.41%; 3-year sales "
+        "growth 39.52%; 3-year profit growth 78.14%; P/E 37.57x; PEG 0.48; EBIT Rs "
+        "34.09 crore; Net Working Capital (ex-cash, ex-debt) Rs 55.83 crore; Net Fixed "
+        "Assets (ex-goodwill) Rs 56.97 crore; Enterprise Value Rs 894.83 crore; Promoter "
+        "holding 73.35%, pledge 0.00%, 3-year holding trend +0.00 (flat).\n\n"
+        "From secondary web research (FY2025 annual-report figures as reported by "
+        "financial portals, not independently read from the primary filing): Revenue "
+        "from operations ~Rs 43.96 crore, PAT ~Rs 23.37 crore, EBITDA margin reported "
+        "as '~70%+'. These figures are directionally consistent with, but not identical "
+        "to, the Stage 1a OPM figure above -- plausibly a different period or margin "
+        "definition; this discrepancy is not resolved here and is flagged, not papered "
+        "over.\n\n"
+        "NOT AVAILABLE in this Profile 1 snapshot (and not found in secondary research "
+        "either): OCF/PAT, gross margin (distinct from OPM), interest coverage, FCF "
+        "conversion %, current ratio, price-to-book, a multi-year (5yr+) profit CAGR or "
+        "EPS-decline history, and dividend record. These gaps are carried into "
+        "Provenance (§14) rather than assumed favorable."
+    ),
+    [FIN0("Stage 1a fields and secondary-source FY25 figures, with explicit reconciliation gap noted")],
+)
+
+dossier["fatal_flaw_checklist"] = section(
+    "Fatal-flaw checklist",
+    (
+        "Referencing the Stage 2 hard-block results already computed by "
+        "artha/screening/hard_blocks.py against this exact snapshot:\n"
+        "- promoter_pledging: PASS (promoter_pledge_pct=0.0, well under the 20% red-flag threshold).\n"
+        "- promoter_holding_not_declining: PASS (3yr trend=0.00, flat, not declining).\n"
+        "- profit_becomes_cash (OCF/PAT >= 0.8): NEEDS_STAGE_1B -- ocf_to_pat is not a "
+        "field present in this Profile 1 export; genuinely unresolved, not assumed to pass.\n"
+        "- survives_worst_year_without_dilution, price_assumption_plausible: NEEDS_STAGE_3 "
+        "per the hard-block module's own routing -- addressed qualitatively in Pre-Mortem "
+        "(§9) and Valuation (§7) respectively.\n"
+        "- no_single_point_of_failure_dependency: addressed here directly. By service "
+        "line the business is reasonably diversified (collection, data destruction, "
+        "ITAD/refurbishment, material recovery, remarketing, EPR-fee services), so no "
+        "single service line looks like an obvious single point of failure. However, "
+        "there IS a real, non-diversifiable macro dependency: the entire EPR-compliance "
+        "revenue thesis depends on continued regulatory enforcement of the E-Waste "
+        "Management Rules 2022 -- a genuine concentration risk this checklist item should "
+        "not paper over.\n"
+        "- business_explainable_in_five_sentences: PASS, see §2.\n"
+        "- no_serial_equity_dilution: NEEDS_STAGE_1B -- a multi-year share-count history "
+        "was not available in this research pass.\n"
+        "- Greenblatt ranking gate (artha/screening/hard_blocks.py rank_by_greenblatt, "
+        "computed directly against this snapshot): ROC rank 236/1101, Earnings Yield "
+        "rank 761/1101, combined percentile 48.32% -- does NOT clear the best-decile "
+        "(<=10%) threshold; the expensive earnings yield (EBIT/EV = 3.81%, consistent "
+        "with the 37.57x P/E) is what drags the combined rank down despite a strong ROC."
+    ),
+    [SH0("promoter pledge and holding trend"), FIN0("EBIT/EV inputs supporting the Greenblatt earnings-yield computation")],
+)
+
+dossier["valuation"] = section(
+    "Valuation",
+    (
+        "Current: Price Rs 467.65, Market Cap Rs 902.41cr, EV Rs 894.83cr (EV slightly "
+        "below Market Cap, consistent with the near-debt-free, modest-net-cash profile "
+        "implied by D/E=0.05), P/E 37.57x on trailing earnings.\n\n"
+        "Stated assumptions (mine, not company guidance -- explicit per plan.md's "
+        "instruction to state assumptions plainly, not imply them):\n"
+        "- BEAR CASE: informal-sector competition intensifies or EPR enforcement is "
+        "under-delivered; OPM compresses from ~59% toward a more 'typical' "
+        "industrial-services margin (assume ~35-40%); earnings growth stalls. Applying "
+        "a de-rated multiple (assume ~15-18x, roughly in line with a slower-growth "
+        "industrial name) to roughly flat-to-lower earnings implies a price materially "
+        "below current levels -- a rough, assumption-driven estimate of 40-55% downside "
+        "from current price, not a precise target.\n"
+        "- BASE CASE: growth decelerates from the reported 3-year pace (which is not "
+        "sustainable indefinitely at 39-78% per year off a small base) toward a still-"
+        "healthy but more moderate rate; margin holds roughly near current levels; the "
+        "market keeps a growth-oriented multiple similar to today's. This implies "
+        "roughly flat-to-modest returns from the current price over the next 1-2 years, "
+        "i.e. the current price already assumes a good outcome.\n"
+        "- BULL CASE: EPR enforcement tightens further, Ecoreco wins more OEM compliance "
+        "mandates and scales capacity utilization toward its stated 31,200 MT/annum "
+        "ceiling from a current low base (~Rs 44cr revenue implies substantial spare "
+        "capacity); margin holds or improves with scale. A sustained secular-growth "
+        "re-rating could support meaningful (assume 40-70%+) further upside over 2-3 "
+        "years, but this requires several specific, falsifiable things to keep going "
+        "right (see §4).\n\n"
+        "Overall read: at 37.57x trailing earnings, this is NOT a statistically cheap "
+        "entry (unlike, e.g., a sub-15x Graham-style name) -- the current price already "
+        "requires a good chunk of the bull case to be right merely to avoid a loss if "
+        "growth disappoints, which is exactly the QGLP Price score's finding (§16)."
+    ),
+    [FIN0("Stage 1a valuation multiples"), BIZ1("stated capacity vs current revenue scale, informing the bull-case runway argument")],
+)
+
+dossier["buy_below_and_sizing"] = section(
+    "Buy-below price and position size",
+    (
+        "Given the Price score of 1/3 (§16) and a Jhunjhunwala conviction score of 3/5 "
+        "(§23) -- moderate, not high, conviction -- a buy-below discipline should demand "
+        "a real discount to today's Rs 467.65, not a same-price entry. Proposed buy-below: "
+        "roughly 15-20% below the current price (i.e. materially closer to a ~30x trailing "
+        "multiple rather than ~37.5x), reflecting that the bear-case de-rate risk (§7) is "
+        "real and the margin of safety at today's price is thin. This is a proposal, not a "
+        "rule the CLI enforces.\n\n"
+        "Position size: config/ips.md caps a fully-sized Track A position at 2.5% of total "
+        "investable assets, but ALSO states that at the initial 5% active-sleeve stage, "
+        "the 25% single-company sleeve limit actually restricts each position to 1.25% of "
+        "total investable assets until the sleeve reaches >=10%. Given the moderate (not "
+        "high) conviction score, this proposal sizes toward the lower half of whatever "
+        "band is currently binding (i.e. materially below the ceiling, not at it), subject "
+        "in every case to human approval at Gate 1 (plan.md §7.1) -- this is a proposal "
+        "for a human to accept, reject, or resize, never an executed decision."
+    ),
+    [],
+)
+
+dossier["pre_mortem"] = section(
+    "Pre-mortem",
+    (
+        "It is two years from now (2028) and this position has lost 60%. What happened: "
+        "the E-Waste Management Rules 2022's enforcement was diluted in practice (a "
+        "plausible regulatory-rollback risk for any compliance-driven business model, "
+        "and one this research could not rule out) -- OEMs found it cheaper to route "
+        "e-waste through informal-sector channels or lightly-enforced compliance "
+        "certificates rather than pay Ecoreco's fees. Simultaneously, the named market "
+        "leader (EMS Ltd) or another named formal-sector competitor (Antony Waste "
+        "Handling Cell, Concord Enviro Systems) won a large OEM contract that had been "
+        "assumed to be part of Ecoreco's growth runway, exposing that the 'no single "
+        "point of failure' read in §6 was too optimistic about customer concentration "
+        "risk, which this research was never able to verify with real customer-mix "
+        "data. Revenue growth stalled well below the trailing 39.52%/78.14% pace, OPM "
+        "compressed from ~59% toward the mid-30s% as the company competed harder for "
+        "volume, and the market re-rated the stock from 37.57x down toward the mid-teens "
+        "multiple on a lower earnings base -- consistent with the Bear Case in §7."
+    ),
+    [],
+)
+
+dossier["kill_triggers"] = section(
+    "Kill triggers",
+    (
+        "Machine-checkable where possible, feeding future monitoring (Phase 5):\n"
+        "1. promoter_holding_pct falls below 65% (vs current 73.35%), OR "
+        "promoter_pledge_pct rises above 0%.\n"
+        "2. OPM falls below 40% for two consecutive reported quarters/years (vs current "
+        "59.41%) -- a specific, checkable margin-durability trigger from §4's second "
+        "must-be-true claim.\n"
+        "3. Any disclosed SEBI show-cause order, adverse related-party-transaction "
+        "finding, or auditor resignation (currently unverified either way -- see §14).\n"
+        "4. No new disclosed OEM/corporate EPR-compliance contract or capacity-"
+        "utilization update for four consecutive quarters (a proxy for the demand-growth "
+        "thesis stalling, since exact customer-contract data isn't independently "
+        "trackable by this pipeline yet).\n"
+        "5. Sales growth (3yr) falls below 15% in a future snapshot (vs current 39.52%), "
+        "signaling the secular-growth thesis has meaningfully decelerated."
+    ),
+    [],
+)
+
+dossier["what_would_make_me_add_more"] = section(
+    "What would make me add more",
+    (
+        "A verified (not secondary-sourced) read of the actual FY2025 annual report "
+        "confirming: (a) the RPT quantum with Ecoreco Park Pvt Ltd / Ecoreco Enviro "
+        "Education Pvt Ltd is immaterial and arms-length, (b) a clean, unqualified "
+        "audit opinion, and (c) OCF/PAT, gross margin, and interest-coverage figures "
+        "that corroborate the reported margin profile with real cash-conversion "
+        "quality (not just accrual profit). Additionally: a disclosed, named large OEM "
+        "compliance contract win, or a capacity-utilization update showing meaningful "
+        "progress toward the stated 31,200 MT/annum ceiling from the current low base, "
+        "would directly strengthen the Bull Case in §7 with real evidence rather than a "
+        "stated assumption."
+    ),
+    [],
+)
+
+dossier["holding_period_and_tax"] = section(
+    "Expected holding period and tax line",
+    (
+        "Expected holding period: multi-year (this is a Track A compounder thesis, "
+        "5+ year evaluation window per plan.md §4), contingent on the three "
+        "must-be-true claims in §4 continuing to hold at each periodic review. "
+        "Per config/ips.md §5, nothing sells before 12 months of holding unless the "
+        "thesis has materially broken (a specific event from §4/§10 firing, not a "
+        "price move alone). A sale within the first 12 months would be classified "
+        "STCG (20% post-July-2024 rate); after 12 months, LTCG (12.5%, with the "
+        "Rs 1.25 lakh annual exemption) -- per plan.md §2.3 and artha/ledger/tax.py."
+    ),
+    [],
+)
+
+dossier["disconfirming_evidence"] = section(
+    "Disconfirming evidence",
+    (
+        "The strongest case against this thesis, stated plainly rather than as a "
+        "token line:\n\n"
+        "1. The valuation is not cheap. At 37.57x trailing P/E, the market has already "
+        "priced in continued strong growth -- this is not a Graham-style bargain, and "
+        "the Greenblatt earnings-yield rank (761st of 1101, EBIT/EV=3.81%) confirms the "
+        "stock is expensive on an earnings-yield basis specifically, despite an "
+        "excellent ROC. A disappointment on growth has real downside (see Bear Case, "
+        "§7), and the combined Greenblatt percentile (48.32%) does not even clear the "
+        "best-decile ranking gate this codebase's own Stage 2 screen applies.\n\n"
+        "2. The trailing 3-year growth figures (39.52% sales, 78.14% profit) are "
+        "measured off what appears to be a genuinely small revenue base (~Rs 44 crore "
+        "per secondary FY25 figures) -- high percentage growth off a small base is "
+        "structurally easier to sustain briefly and harder to sustain indefinitely; "
+        "this research found no independent, multi-year (5+ year) profit history to "
+        "confirm the growth is not itself an artifact of a low starting point, "
+        "analogous to the exact kind of low-base distortion this research explicitly "
+        "flagged and avoided in a different candidate (Modi Naturals) considered "
+        "earlier in this same research session.\n\n"
+        "3. The entire thesis rests on continued, tightening enforcement of the "
+        "E-Waste Management Rules 2022 -- a regulatory dependency this research could "
+        "not independently verify is durable (regulatory enforcement intensity in "
+        "India can and does vary over multi-year windows). If enforcement is diluted "
+        "or the informal sector continues to undercut compliant recyclers on price "
+        "(a dynamic the business overview document itself names as a real challenge), "
+        "the core demand driver weakens.\n\n"
+        "4. Related-party-transaction quantum, auditor identity/opinion, and OCF/PAT "
+        "cash-conversion quality were ALL genuinely unverified in this research pass "
+        "(§14) -- an investor relying only on this dossier is trusting reported accrual "
+        "profit and a clean-on-its-face governance story without independent "
+        "confirmation of either."
+    ),
+    [FIN0("small revenue base underlying the reported growth rates"), BIZ1("informal-sector competitive pressure named as a real challenge"), SH1("unverified RPT quantum and auditor status")],
+)
+
+dossier["provenance"] = {
+    "model": "claude-sonnet-5",
+    "prompt_version": "manual-harness-v1",
+    "documents_read": [
+        "ECORECO_BUSINESS_OVERVIEW",
+        "ECORECO_FY25_HIGHLIGHTS",
+        "ECORECO_SHAREHOLDING_GOVERNANCE",
+    ],
+    "could_not_verify": [
+        "Exact related-party-transaction quantum/terms with Ecoreco Park Pvt Ltd and Ecoreco Enviro Education Pvt Ltd",
+        "Auditor identity, tenure, and audit-opinion status",
+        "Verbatim Q4 FY2024 concall transcript (only a secondary summary was available)",
+        "10-year earnings-deficit / dividend-record history (Graham's tests)",
+        "OCF/PAT, gross margin (distinct from OPM), interest coverage, FCF conversion % -- not present in this Profile 1 Stage 1a export",
+        "Multi-year EBIT / invested-capital time series needed to compute ROIIC (only a single-period Stage 1a snapshot was available)",
+        "Full Pabrai Downside-Floor Score /16 sub-components requiring balance-sheet detail beyond Stage 1a fields (total debt/cash split, detailed liquidation-value inputs)",
+        "Reconciliation of the exact discrepancy between the Stage 1a OPM (59.41%) and the secondary-source '~70%+ EBITDA margin' figure",
+    ],
+}
+
+dossier["moat_understandability_gate"] = {
+    "passed": True,
+    "moat_type": "efficient_scale_regulatory",
+    "moat_evidence": (
+        "The company's CPCB/MPCB authorization and R2v3 ('Responsible Recycling') "
+        "certification are real regulatory/compliance barriers that most informal-"
+        "sector e-waste operators cannot clear, positioning Ecoreco as one of a "
+        "named, limited set of formal-sector players (alongside EMS Ltd, Antony "
+        "Waste Handling Cell, Concord Enviro Systems, and a few others) able to "
+        "issue OEMs the compliance certification EPR regulations require. This is a "
+        "regulatory/efficient-scale moat, not a brand or network-effect moat."
+    ),
+    "return_trend_summary": (
+        "Only a single-period Stage 1a snapshot was available (ROCE=29.97%, "
+        "ROE=23.29%) -- a full 10-year ROE/ROIC-vs-WACC trend could not be "
+        "established from the sources accessible in this research pass. The "
+        "directionally-consistent secondary-source claim of 'strong profit growth "
+        "over the trailing five years (44-99% CAGR range)' is reported but not "
+        "independently verified as a clean multi-year return series."
+    ),
+    "five_sentence_test_result": (
+        "Pass -- see §2's five-sentence business model: e-waste collection, data "
+        "destruction, refurbishment/ITAD, material recovery, remarketing, and EPR "
+        "compliance fee services, sold to OEMs/corporates needing to meet India's "
+        "E-Waste Management Rules 2022."
+    ),
+    "understandability_checklist": {
+        "five_sentence_business_model": True,
+        "unit_economics_clarity": True,
+        "industry_structure_stability": True,
+        "demand_forecastability_5_10yr": True,
+        "management_understandability": True,
+        "accounting_transparency": True,
+        "identifiable_moat_source": True,
+    },
+    "inversion_summary": (
+        "This fails if: (a) EPR enforcement is diluted or under-enforced, removing "
+        "the regulatory demand driver named in §3/§6; (b) a large OEM contract shifts "
+        "to a named competitor (EMS Ltd or another formal-sector peer); (c) the "
+        "informal/unlicensed sector continues undercutting compliant recyclers on "
+        "price to a degree that compresses Ecoreco's currently very high margin; or "
+        "(d) the unverified RPT/auditor items in §14 turn out to hide a real "
+        "governance problem once independently confirmed."
+    ),
+    "citations": [BIZ0("EPR compliance model, CPCB/MPCB/R2v3 certification"), BIZ1("named competitors and industry dynamics"), SH0("promoter/management identity, long tenure")],
+}
+
+dossier["qglp_scorecard"] = {
+    "quality": 2,
+    "growth": 1,
+    "longevity": 2,
+    "price": 1,
+    "evidence": {
+        "Q": (
+            "ROE 23.29% and ROCE 29.97% both comfortably clear the >=15% (ideal >=20%) "
+            "threshold with real margin; D/E 0.05 is well under the <=1.0 ceiling "
+            "(near debt-free); promoter holding 73.35%, unpledged, flat (not declining). "
+            "Held back from a 3 only because OCF/PAT (the cash-conversion quality check) "
+            "is not available in this Stage 1a export and was not independently verified "
+            "-- a real, named gap, not assumed favorable."
+        ),
+        "G": (
+            "3-year sales growth 39.52% and profit growth 78.14% both comfortably clear "
+            "the >=15-20% ideal band on their face -- but this research could not "
+            "independently confirm the absence of an EPS-decline year, nor a genuine "
+            "5-year CAGR (only a secondary-sourced, imprecise '44-99% CAGR range' claim "
+            "was found), and the growth is measured off what appears to be a small "
+            "revenue base (~Rs 44cr per secondary FY25 figures), which this dossier's "
+            "own Disconfirming Evidence (§12) flags as a real distortion risk. Scored "
+            "conservatively at 1 given the unverified multi-year consistency."
+        ),
+        "L": (
+            "A real, named regulatory/efficient-scale moat (CPCB/MPCB/R2v3 certification) "
+            "and a long-tenured (since 1994), stable-holding promoter family support a "
+            "plausible durability case -- but this rests on continued regulatory "
+            "enforcement (a genuine, unverified-as-durable dependency named in §12), not "
+            "a slam-dunk case, so scored 2 rather than 3."
+        ),
+        "P": (
+            "P/E 37.57x and PEG 0.48 are not statistically cheap; the Greenblatt "
+            "earnings-yield rank (761st of 1101, EBIT/EV=3.81%) confirms the price "
+            "already assumes a good outcome, consistent with the Bull-heavy scenario "
+            "weighting in §7's Valuation. Scored 1 -- priced for a good outcome, "
+            "little margin of safety."
+        ),
+    },
+    "citations": [FIN0("Stage 1a and secondary-source financial figures"), SH0("promoter holding stability")],
+}
+
+dossier["margin_of_safety_scuttlebutt"] = section(
+    "Margin-of-Safety & Scuttlebutt Notes",
+    (
+        "GRAHAM DEFENSIVE-INVESTOR CRITERIA (relaxed for India, plan.md §17):\n"
+        "- Current ratio >=2.0: UNKNOWN -- current_ratio is not present in this Profile "
+        "1 Stage 1a export.\n"
+        "- No earnings deficit in the last 10 years: UNKNOWN -- a 10-year history was "
+        "not available; not assumed to pass.\n"
+        "- P/E <=15x on 3-year average EPS: FAIL -- trailing P/E is 37.57x, well above "
+        "the 15x ceiling.\n"
+        "- P/B <=1.5x: UNKNOWN -- price_to_book is not present in this export.\n"
+        "- Graham Number (P/E x P/B <=22.5): UNKNOWN -- cannot be computed without P/B.\n"
+        "- Dividend record >=10 consecutive years (relaxed threshold): UNKNOWN -- no "
+        "dividend data was found or ingested for this candidate.\n"
+        "- Margin of safety vs. an intrinsic-value estimate: not computed here with "
+        "false precision -- see Valuation (§7) for explicit bear/base/bull scenario "
+        "assumptions instead of a single point estimate; on the numbers available, "
+        "this does NOT look like a Graham-style bargain (P/E test fails outright).\n\n"
+        "FISHER'S 15-POINT SCUTTLEBUTT CHECKLIST (digital proxies, plan.md §5.5):\n"
+        "1. Products/services with sufficient market potential: PASS -- secular EPR "
+        "demand growth described (BIZ1).\n"
+        "2. Management determined to develop new products/processes: PARTIAL -- 'new "
+        "collection models (Recycling on Wheels), tech investment' described, but not "
+        "verified beyond a secondary summary (BIZ1).\n"
+        "3. R&D effectiveness relative to size: UNKNOWN -- no R&D/patent evidence found.\n"
+        "4. Above-average sales organization: UNKNOWN -- no evidence found either way.\n"
+        "5. Worthwhile profit margin: PASS -- OPM 59.41% is well above typical industrial "
+        "margins (FIN0).\n"
+        "6. Doing what to improve margin: PARTIAL -- 'focus on high-margin business mix, "
+        "capacity utilization targets' per Q4 FY24 concall summary (FIN1).\n"
+        "7. Outstanding labor/personnel relations: UNKNOWN.\n"
+        "8. Outstanding executive relations: UNKNOWN.\n"
+        "9. Depth of management: PARTIAL -- named MD (Brijkishore K. Soni) plus Aruna "
+        "Soni and Shashank Soni in company records (SH0), but bench depth beyond the "
+        "family is not evidenced.\n"
+        "10. Cost analysis and accounting controls: UNKNOWN -- not independently "
+        "verified (see §14).\n"
+        "11. Other aspects of the business distinct to the industry (regulatory "
+        "licensing): PASS -- CPCB/MPCB/R2v3 certification named as a real, specific "
+        "differentiator (BIZ0).\n"
+        "12. Short- or long-range profit outlook: PARTIAL -- concall commentary on "
+        "capacity utilization and EPR-fee growth expectations exists but is a secondary "
+        "summary, not a verbatim quote (FIN1).\n"
+        "13. Equity financing needs given growth plans: UNKNOWN -- no disclosed "
+        "financing-plan evidence found; D/E of 0.05 suggests no current reliance on "
+        "debt financing at least.\n"
+        "14. Candour with investors, including when things go wrong: PARTIAL -- the "
+        "one concall summary available reads as ordinary forward-looking commentary, "
+        "not visibly evasive, but this is too thin a sample (one concall, secondary-"
+        "sourced) to score confidently.\n"
+        "15. Management of unquestionable integrity: addressed separately and more "
+        "rigorously as the dedicated Integrity Gate (§18), not scored twice here."
+    ),
+    [FIN0("financial figures"), FIN1("concall commentary"), BIZ0("regulatory certification"), SH0("management identity")],
+)
+
+dossier["integrity_gate"] = {
+    "passed": True,
+    "promoter_pledge_flag": False,
+    "declining_holding_flag": False,
+    "rpt_or_auditor_or_sebi_flag": False,
+    "evidence": (
+        "promoter_pledge_pct=0.0 (well under the 20% red-flag threshold) and "
+        "promoter_holding_trend_3y=0.00 (flat, not declining) both confirmed directly "
+        "from the ingested Stage 1a snapshot and cross-checked against secondary "
+        "shareholding-pattern aggregators (Trendlyne, MarketScreener). No SEBI show-"
+        "cause order, adverse related-party-transaction finding, or auditor "
+        "resignation was found referenced anywhere in the sources consulted for this "
+        "research (multiple independent search queries). HOWEVER, this is an absence "
+        "of finding in general public research, not an exhaustive review of SEBI's "
+        "enforcement database, exchange announcements over the company's full listed "
+        "history, or the primary annual report's RPT note and audit opinion -- the "
+        "exact RPT quantum with the two named related entities (Ecoreco Park Pvt Ltd, "
+        "Ecoreco Enviro Education Pvt Ltd) and the auditor's identity/opinion were NOT "
+        "independently confirmed, and this gap is explicitly carried into Provenance "
+        "(§14) rather than treated as fully verified."
+    ),
+    "citations": [SH0("promoter pledge, holding trend, and named related entities"), SH1("explicit RPT/auditor verification gap")],
+}
+
+dossier["scale_economies_shared"] = section(
+    "Scale Economies Shared Assessment",
+    (
+        "ROIIC: could NOT be computed. Ecoreco's ROIIC requires a multi-year "
+        "(NOPAT(t), NOPAT(t-1), Invested Capital(t-1), Invested Capital(t-2)) time "
+        "series; only a single-period Stage 1a snapshot was available in this "
+        "research pass, so the ΔNOPAT / ΔInvested-Capital inputs cannot be "
+        "established. Reporting an estimated ROIIC from a single period would be a "
+        "fabricated number with false precision, which this section explicitly "
+        "avoids per the ROIIC skill's own instruction.\n\n"
+        "A RELATED BUT DISTINCT metric that CAN be computed from the single-period "
+        "snapshot: single-period Greenblatt-style ROC = EBIT / (Net Working Capital "
+        "ex-cash-ex-debt + Net Fixed Assets ex-goodwill) = 34.09 / (55.83 + 56.97) = "
+        "34.09 / 112.80 = 30.22%. This is NOT ROIIC (it is a return-on-capital-employed "
+        "proxy on total invested capital, not on the incremental/marginal capital added "
+        "this period) and should not be conflated with it, but it is at least "
+        "consistent with a business earning attractive returns on the capital already "
+        "employed.\n\n"
+        "VOLUME VS. PRICE: no management quote explicitly distinguishing volume growth "
+        "from price/fee increases was found. The demand-driver narrative (rising "
+        "electronics consumption, tightening EPR enforcement) is more consistent with "
+        "a volume-driven growth story (more e-waste processed, more OEM compliance-fee "
+        "contracts) than a price-increase-driven one, but this is an inference from the "
+        "cited industry-driver description, NOT a direct quote -- flagged as such "
+        "rather than presented as verified.\n\n"
+        "VERDICT: insufficient evidence for a confident moat-widening/stable/narrowing "
+        "call on the Scale-Economies-Shared framework specifically (which is about "
+        "management's choice to share cost savings with customers rather than extract "
+        "margin) -- no direct management language on this specific point was found. "
+        "The best honest read is 'stable to widening' based on the regulatory-moat "
+        "argument in §15, not on Sleep's own volume/price test, which this research "
+        "could not evidence directly."
+    ),
+    [FIN0("EBIT and invested-capital inputs"), BIZ1("demand-driver narrative used for the volume-vs-price inference")],
+)
+
+dossier["magic_formula_attribution"] = section(
+    "Magic Formula Attribution",
+    (
+        "This is a quantitative-entry note reporting the Stage 2 Greenblatt ranking "
+        "gate's result (artha/screening/hard_blocks.py), not a standalone buy case.\n\n"
+        "ROC = EBIT / (Net Working Capital ex-cash-ex-debt + Net Fixed Assets "
+        "ex-goodwill) = 34.09 / (55.83 + 56.97) = 30.22%.\n"
+        "Earnings Yield = EBIT / Enterprise Value = 34.09 / 894.83 = 3.81%.\n\n"
+        "Ranked directly against the full 1,101-company rankable universe from this "
+        "same snapshot: ROC rank 236th, Earnings Yield rank 761st, combined rank 997, "
+        "combined percentile 48.32% -- this does NOT clear the best-decile (<=10%) "
+        "threshold the Stage 2 gate requires to pass. The excellent ROC is offset by a "
+        "poor earnings yield, i.e. the market is charging a high price for that return "
+        "on capital (consistent with the 37.57x P/E).\n\n"
+        "This is Profile 1 (profile_1_standard), so this uses Greenblatt's own "
+        "EBIT-based ROC/EV method directly -- no sector-native substitution was "
+        "required (the Profile 2-5 substitution disclosure does not apply here)."
+    ),
+    [FIN0("EBIT, NWC, NFA, EV inputs")],
+)
+
+dossier["conviction_sizing"] = section(
+    "Super-Investor Alignment / Cloning & Conviction Sizing",
+    (
+        "PABRAI DOWNSIDE-FLOOR SCORE (/16): could not be scored in full from "
+        "available data. Debt safety looks strong (D/E=0.05, near debt-free) -- a "
+        "reasoned partial input supporting a high sub-score there -- but "
+        "net-cash/tangible-asset backing, bear-case FCF survival, and liquidation-"
+        "value coverage all require balance-sheet detail (total debt/cash split, "
+        "detailed fixed-asset composition) not available in the Stage 1a snapshot or "
+        "secondary research. Reporting a fabricated /16 total would misrepresent "
+        "confidence that isn't there; this section reports the gap honestly instead.\n"
+        "ASYMMETRY RATIO: using this dossier's own stated Valuation assumptions (§7) "
+        "as the input -- an assumed ~40-55% bear-case downside against an assumed "
+        "~40-70% bull-case upside -- gives a rough asymmetry ratio in the "
+        "neighborhood of 1:1 to 1.5:1, well short of Pabrai's >=3:1 threshold. This is "
+        "explicitly built from this dossier's own scenario assumptions, not a company "
+        "disclosure or an independently verified calculation, and should be read with "
+        "that caveat.\n\n"
+        "No cross-reference to a known Indian super-investor's disclosed shareholding "
+        "(bulk/block deal or >1% filing) was found or cited for this candidate.\n\n"
+        "JHUNJHUNWALA CONVICTION SCORE: 3/5. Business clarity is strong (clean, "
+        "understandable single-segment story, §2/§15); management-quality checks are "
+        "thin (one secondary-sourced concall summary, no independently verified "
+        "RPT/auditor status, §14); FCF/PAT reconciliation could not be done (no FCF "
+        "data available); thesis specificity is reasonable (a specific, named "
+        "regulatory driver, §3); disconfirming-evidence adequacy is genuine (§12 "
+        "raises real, unresolved concerns, not token ones). This conviction score is "
+        "explicitly NOT a return forecast -- it only modulates where in the sizing "
+        "band a position falls, and remains subject to human override at Gate 1 "
+        "(plan.md §7.1).\n\n"
+        "PROPOSED POSITION SIZE (a proposal only, not a decision): given the moderate "
+        "(3/5) conviction score and the thin margin of safety found in Valuation (§7), "
+        "size toward the lower half of whatever Track A band is currently binding per "
+        "config/ips.md (up to 1.25% of total investable assets at the current 5% "
+        "active-sleeve stage, per the 25% single-company sleeve-limit interaction) -- "
+        "subject to Gate 1/Gate 2 human approval (plan.md §7)."
+    ),
+    [FIN0("D/E input for the debt-safety read")],
+)
+
+dossier["quality_compounding_checklist"] = section(
+    "Quality-Compounding Checklist",
+    (
+        "ROCE: 29.97% (single latest-period figure; a multi-year ROCE TREND could not "
+        "be established from the single-period Stage 1a snapshot available -- reported "
+        "honestly as a point-in-time figure, not a trend).\n"
+        "Gross margin (distinct from OPM), interest coverage, and FCF conversion %: "
+        "NOT AVAILABLE -- none of these three fields are present in this Profile 1 "
+        "Stage 1a export, and none were found in secondary research either. Reported "
+        "as insufficient data rather than substituted with OPM or guessed at.\n\n"
+        "REINVESTMENT-RUNWAY RATIONALE: the company's stated processing capacity "
+        "(31,200 metric tonnes/annum) versus its current reported revenue scale "
+        "(~Rs 44cr per secondary FY25 figures) suggests meaningful unused capacity -- "
+        "a credible, cited basis (not generic optimism) for a reinvestment/scaling "
+        "runway if EPR-driven demand continues to grow into that capacity, as "
+        "described in the business overview and concall-summary sources. This is "
+        "the specific, evidenced case for why the current (not statistically cheap, "
+        "§7) price could still be justified by growth into existing capacity, rather "
+        "than requiring further capital-heavy expansion.\n\n"
+        "SMITH'S 'DO NOTHING' DISCIPLINE: 'do nothing' here means not selling absent "
+        "genuine thesis impairment, not blind inertia. Specific evidence that WOULD "
+        "impair this thesis (feeding Kill Triggers, §10): OPM falling below 40% for "
+        "two consecutive periods, EPR enforcement visibly diluted, loss of a "
+        "disclosed large OEM contract to a named competitor, or confirmation of an "
+        "adverse RPT/auditor finding once the currently-unverified items in §14 are "
+        "resolved."
+    ),
+    [FIN0("ROCE and revenue scale"), BIZ0("stated processing capacity")],
+)
+
+with open("run-ecoreco-20260830-001.json", "w", encoding="utf-8") as f:
+    json.dump(dossier, f, indent=2, ensure_ascii=False)
+
+print("wrote run-ecoreco-20260830-001.json,", len(json.dumps(dossier)), "bytes")

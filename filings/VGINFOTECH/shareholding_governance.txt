@@ -1,0 +1,45 @@
+VIRTUAL GALAXY INFOTECH LIMITED (NSE SME/Emerge: VGINFOTECH)
+Shareholding and governance notes
+
+Source: web research synthesizing Trendlyne's shareholding-pattern page and
+Upstox's shareholding-pattern page. Captured via web research on
+2026-08-30.
+
+PROMOTER SHAREHOLDING: Promoter holding is reported steady at
+approximately 65.00% for all quarters through FY2025-26 (Trendlyne),
+consistent with the Stage 1a snapshot's promoter_holding_pct=65.0. No
+promoter shares are pledged (0% pledged) for all recent quarters. Notably,
+over 99.5% of promoter shares are reported as locked-in for most quarters
+-- a standard SEBI SME-IPO requirement (a longer mandatory lock-in period
+than mainboard IPOs), which is a structural, regulation-driven feature of
+the SME listing rather than a discretionary promoter commitment, and
+should not be read as a voluntary signal of extra promoter conviction.
+
+INSTITUTIONAL HOLDING: Foreign Institutional Investor (FII) holding has
+DECLINED from approximately 5.0% in earlier quarters to approximately
+1.12% as of June 2026. Domestic Institutional Investor (DII) holding is
+approximately 1.18%. This declining FII trend, while starting from an
+already-small base, is flagged explicitly as a data point rather than
+omitted -- it could reflect routine small-holder portfolio churn typical
+of thinly-held SME stocks, or could reflect an institutional investor
+reducing conviction; this research pass could not distinguish between
+those explanations.
+
+RELATED PARTY TRANSACTIONS, AUDITOR, AND SEBI FLAGS: no related-party-
+transaction quantum, auditor name/tenure/opinion, or SEBI show-cause/
+adverse-finding disclosure was located in the sources consulted for this
+research pass. Given the SME-platform listing's lighter disclosure regime
+(noted in the business-overview document), the absence of a public,
+easily-searchable secondary-source discussion of these items is a weaker
+signal here than it would be for a longer-listed mainboard company like
+Kothari Petrochemicals -- i.e. "not found" should be weighted as "not yet
+verifiable from public secondary sources," not as "confirmed clean."
+
+STRUCTURAL RISK SUMMARY: this is the highest-risk candidate of the four in
+this research batch on governance/disclosure-quality grounds specifically
+(not on reported-fundamentals grounds) -- a genuinely small, SME-platform,
+thinly-institutionally-held, single-promoter-family company with a
+three-decade pre-listing operating history but a very short (SME-listing)
+public-market disclosure history. This should be weighted accordingly in
+the Integrity Gate and Fatal-Flaw Checklist sections rather than treated
+as equivalent in verifiability to a mainboard-listed peer.
