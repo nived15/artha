@@ -113,6 +113,29 @@ def validate_dossier(dossier: Dossier) -> ValidationResult:
     if not provenance.documents_read:
         errors.append(ValidationError("provenance", "documents_read must list at least one document"))
 
+    # The engine's quantitative verdict. Beyond its own internal checks, it
+    # must agree with the dossier it sits in.
+    assessment = dossier.return_assessment
+    errors += [ValidationError("return_assessment", p) for p in assessment.validate()]
+    if assessment.track != dossier.identity.track:
+        errors.append(
+            ValidationError(
+                "return_assessment",
+                f"track {assessment.track!r} does not match identity.track {dossier.identity.track!r}",
+            )
+        )
+    # Anything the engine could not resolve has to surface in section 14
+    # rather than quietly disappearing between the two.
+    for pending in assessment.pending_verification:
+        check = pending.split(":")[0].strip()
+        if not any(check in claim for claim in provenance.could_not_verify):
+            errors.append(
+                ValidationError(
+                    "return_assessment",
+                    f"unresolved check {check!r} is not listed in provenance.could_not_verify",
+                )
+            )
+
     # Section 15 — Moat & Understandability gate. A fail here is reported
     # distinctly from "missing data": the section is present and complete,
     # but the gate itself did not clear.

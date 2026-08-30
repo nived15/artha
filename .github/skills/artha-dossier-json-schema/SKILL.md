@@ -56,6 +56,43 @@ will be **rejected** if `citations` is empty.
 | `quality_compounding_checklist` | `DossierSection` or `null`/omitted — **required for Track A, must be omitted for Track B** | §22 |
 | `conviction_sizing` | `DossierSection` (citations required) | §23 |
 | `canslim_notes` | `DossierSection` or `null`/omitted — **required for Track B, must be omitted for Track A** | §24 |
+| `return_assessment` | **Do not author this.** Injected by the factory from a ranking run — see below. | — |
+
+## `return_assessment` — machine-generated, never written by an agent
+
+This section carries the engine's expected-return verdict. It is built by
+`artha.dossier.quant.return_assessment_from_candidate()` from an actual
+`artha rank` run and injected into your draft by the factory before
+validation. **Never invent these numbers.** A return figure that did not
+come from the engine is a fabricated claim, and it carries a
+`spec_fingerprint` precisely so it can be traced back to the formula that
+produced it.
+
+Shape, for reference only:
+
+```json
+{
+  "track": "A",
+  "horizon_years": 5.0,
+  "gross_cagr": 0.1932,
+  "net_cagr": 0.1752,
+  "confidence": 0.85,
+  "components": {"growth": 0.1269, "carry": 0.01, "rerating": 0.06},
+  "spec_version": "v1",
+  "spec_fingerprint": "d8cdfd22fafd5f3b",
+  "scenarios": [{"name": "bear", "probability": 0.30, "total_return": -0.475}],
+  "asymmetry_ratio": 4.08,
+  "gates_passed": ["liquidity", "promoter_pledge"],
+  "gates_failed": [],
+  "pending_verification": ["multi_year_consistency: 10y ROE series unavailable"]
+}
+```
+
+**The one rule that affects your writing:** every entry in
+`pending_verification` must also be named in
+`provenance.could_not_verify`. The engine flags what it could not resolve;
+your provenance section must admit it. A draft that carries an unresolved
+check without declaring it is rejected.
 
 ## Common mistakes that fail validation
 
@@ -72,3 +109,8 @@ will be **rejected** if `citations` is empty.
   defers the problem to a human reviewer catching a gate that shouldn't
   have passed; that human catching it is not a design failure, but getting
   the gate honestly right the first time is the goal.
+- Writing your own `return_assessment`, or quoting an expected return in
+  prose that disagrees with the injected one. Cite the engine's number.
+- Leaving `provenance.could_not_verify` empty when the injected
+  `return_assessment.pending_verification` is non-empty — that pair is
+  cross-checked and will fail validation.

@@ -21,7 +21,10 @@ _STANDARD_PROFILE = "profile_1_standard"
 
 def quality_gate(record: CompanyRecord) -> ScreenResult:
     """Agrawal QGLP "Q": ROE >= 15%, ROCE >= 15% (ideal >=20%), D/E <= 1.0,
-    OCF/PAT >= 0.8, promoter holding >= 50% and not declining."""
+    promoter holding >= 50% and not declining.
+
+    OCF/PAT is not exportable from Screener, so cash conversion is assessed
+    from filings at Stage 3 rather than screened here."""
     criteria: list[Criterion] = []
 
     if record.arithmetic_profile != _STANDARD_PROFILE:
@@ -62,16 +65,6 @@ def quality_gate(record: CompanyRecord) -> ScreenResult:
             Outcome.PASS if de is not None and de <= 1.0 else (Outcome.FAIL if de is not None else Outcome.NEEDS_STAGE_1B),
             f"D/E={de}" if de is not None else "debt_to_equity missing",
             ("debt_to_equity",),
-        )
-    )
-
-    ocf_pat = record.get_float("ocf_to_pat")
-    criteria.append(
-        Criterion(
-            "ocf_to_pat_at_least_0_8",
-            Outcome.PASS if ocf_pat is not None and ocf_pat >= 0.8 else (Outcome.FAIL if ocf_pat is not None else Outcome.NEEDS_STAGE_1B),
-            f"OCF/PAT={ocf_pat}" if ocf_pat is not None else "ocf_to_pat missing",
-            ("ocf_to_pat",),
         )
     )
 

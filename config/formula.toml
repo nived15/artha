@@ -1,0 +1,60 @@
+# Artha formula specification, v1.
+#
+# Every coefficient the ranking engine uses lives here. A run records the
+# spec fingerprint, so any ranking can be traced back to these exact numbers.
+# Changing a value changes the fingerprint, which is the point.
+#
+# Units: all rates and margins are decimals (0.20 = 20%).
+
+version = "v1"
+
+[horizons]
+track_a_years = 5.0
+track_b_years = 3.0
+
+# Deterministic vetoes. No expected return can override these.
+[gates]
+max_promoter_pledge = 0.20
+min_promoter_holding = 0.40
+min_market_cap_cr = 200.0
+max_debt_to_equity = 2.0
+
+# Sustainable earnings growth blend. Weights must sum to 1.0.
+[growth]
+w_eps_5y = 0.5
+w_sales_5y = 0.3
+w_roiic = 0.2
+cap = 0.30
+
+# Fair P/E anchor and the cap on annualised rerating contribution.
+[valuation]
+base_pe = 15.0
+k_growth = 4.0
+k_quality = 0.6
+min_fair_pe = 6.0
+max_fair_pe = 45.0
+max_annual_rerating = 0.06
+
+# Risk penalty weights. Scaled by max_penalty, so the total is bounded.
+[risk]
+w_leverage = 0.4
+w_earnings_instability = 0.3
+w_governance = 0.2
+w_fragility = 0.1
+max_penalty = 0.10
+
+# Post-July-2024 Indian capital gains.
+[tax]
+ltcg_rate = 0.125
+stcg_rate = 0.20
+long_term_years = 1.0
+
+# Track B scenario tree, as multiples of current EPS and current P/E.
+[track_b]
+min_asymmetry_ratio = 3.0
+bear_eps_multiple = 0.75
+base_eps_multiple = 1.35
+bull_eps_multiple = 2.10
+bear_pe_multiple = 0.70
+base_pe_multiple = 1.00
+bull_pe_multiple = 1.40

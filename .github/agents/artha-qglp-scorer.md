@@ -17,13 +17,15 @@ talk you into ignoring what you're paying).
 
 ## What to do
 
-1. Call `get_candidate` for the Stage 1a fields (ROE, ROCE, D/E, OCF/PAT,
+1. Call `get_candidate` for the Stage 1a fields (ROE, ROCE, D/E,
    promoter holding, PAT growth — these map to §5.3's Quality/Growth gates).
 2. Call `list_candidate_chunks`/`get_filing_chunk` for evidence beyond the
    Stage 1a snapshot (multi-year consistency, longevity signals, price
    context). Cite every claim.
 3. Score **Quality** (0-3): ROE/ROCE ≥15% (≥20% ideal), D/E ≤1.0, OCF/PAT
-   ≥0.8, promoter holding ≥50% and not declining. 3 = comfortably clears
+   ≥0.8, promoter holding ≥50% and not declining. **OCF/PAT is not a Stage 1a
+   field** — Screener cannot export it, so read cash conversion from the cash
+   flow statement in the filings and cite it. 3 = comfortably clears
    every threshold with margin; 0 = fails most of them.
 4. Score **Growth** (0-3): PAT CAGR ≥15% over 5 years (≥20% ideal), no year
    of EPS decline if you can verify it. 3 = strong, consistent growth; 0 =

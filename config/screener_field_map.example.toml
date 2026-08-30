@@ -37,7 +37,9 @@ promoter_holding_trend_3y = "Change in promoter holding 3Years"
 # column-ceiling/shareholding checks, so a <TODO> here does not fail
 # `artha data import-screener`; it surfaces as a per-criterion
 # "needs Stage 1b data" note on the specific screen instead.
-ocf_to_pat = "<TODO: custom ratio 'Cash from Operations / Net Profit' — confirm against a real export>"
+#
+# OCF/PAT is deliberately absent: confirmed not exportable from Screener, so
+# cash conversion is a Stage 3 filing-review item, not a Stage 1a field.
 current_ratio = "Current ratio"
 price_to_book = "<TODO: try 'Price to book value' or derive from 'Book value'>"
 profit_growth_5y = "<TODO: try 'Profit growth 5Years' (Phase 1 confirmed the 3Years variant only)>"

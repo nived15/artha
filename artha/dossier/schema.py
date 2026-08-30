@@ -132,6 +132,62 @@ class Provenance:
 
 
 @dataclass(frozen=True)
+class ScenarioLine:
+    """One leg of a Track B scenario tree."""
+
+    name: str  # "bear" / "base" / "bull"
+    probability: float
+    total_return: float  # over the full horizon, not annualised
+
+
+@dataclass(frozen=True)
+class ReturnAssessment:
+    """The engine's quantitative verdict, carried into the dossier.
+
+    Machine-generated from a ranking run and injected by the factory — an
+    agent must never author these numbers, which is why the values arrive
+    alongside the spec fingerprint that produced them.
+    """
+
+    track: str
+    horizon_years: float
+    gross_cagr: float
+    net_cagr: float
+    confidence: float
+    components: dict[str, float]
+    spec_version: str
+    spec_fingerprint: str
+    scenarios: tuple[ScenarioLine, ...] = ()
+    asymmetry_ratio: float | None = None
+    gates_passed: tuple[str, ...] = ()
+    gates_failed: tuple[str, ...] = ()
+    pending_verification: tuple[str, ...] = ()
+
+    def validate(self) -> list[str]:
+        problems: list[str] = []
+        if self.track not in ("A", "B"):
+            problems.append(f"track must be 'A' or 'B', got {self.track!r}")
+        if not 0.0 <= self.confidence <= 1.0:
+            problems.append(f"confidence must be in [0, 1], got {self.confidence}")
+        if self.horizon_years <= 0:
+            problems.append(f"horizon_years must be positive, got {self.horizon_years}")
+        if self.net_cagr > self.gross_cagr + 1e-9:
+            problems.append(f"net_cagr {self.net_cagr} exceeds gross_cagr {self.gross_cagr}; tax cannot add return")
+        if self.gates_failed:
+            problems.append(f"a dossier must not exist for a gate-rejected candidate: {list(self.gates_failed)}")
+        if not self.spec_fingerprint.strip():
+            problems.append("spec_fingerprint is required for reproducibility")
+        if self.track == "B":
+            if not self.scenarios:
+                problems.append("Track B requires a scenario tree")
+            else:
+                total = sum(s.probability for s in self.scenarios)
+                if abs(total - 1.0) > 1e-6:
+                    problems.append(f"scenario probabilities must sum to 1.0, got {total}")
+        return problems
+
+
+@dataclass(frozen=True)
 class Dossier:
     """The full 24-section dossier for one candidate, one pipeline run."""
 
@@ -155,6 +211,9 @@ class Dossier:
 
     # Section 14 — the anti-self-deception mechanism (mandatory, structured).
     provenance: Provenance
+
+    # The engine's quantitative verdict, injected from a ranking run.
+    return_assessment: ReturnAssessment
 
     # Sections 15-24 — the framework sections (§17 sourcing).
     moat_understandability_gate: MoatUnderstandabilityGate  # §15, gate

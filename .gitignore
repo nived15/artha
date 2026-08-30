@@ -17,3 +17,6 @@ dist/
 # Config with locally-resolved values (the example/template stays committed)
 config/artha.toml
 config/screener_field_map.toml
+
+# Local troubleshooting/checklist notes
+change_request_checklist.md

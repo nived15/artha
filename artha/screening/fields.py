@@ -21,7 +21,6 @@ from __future__ import annotations
 # spike (so a missing mapping here does not fail the §13.4 spike check —
 # it surfaces as NEEDS_STAGE_1B on the specific screen criterion instead).
 ADDITIONAL_SCREENING_FIELDS: tuple[str, ...] = (
-    "ocf_to_pat",
     "current_ratio",
     "price_to_book",
     "profit_growth_5y",

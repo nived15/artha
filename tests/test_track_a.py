@@ -14,7 +14,6 @@ PASSING_QUALITY_FIELDS = {
     "roe": 18,
     "roce": 20,
     "debt_to_equity": 0.5,
-    "ocf_to_pat": 0.9,
     "promoter_holding_pct": 55,
     "promoter_holding_trend_3y": 1.0,
 }

@@ -39,6 +39,29 @@ def render_markdown(dossier: Dossier) -> str:
         f"- Data snapshot ID: {identity.snapshot_id}\n"
     )
 
+    assessment = dossier.return_assessment
+    component_lines = "\n".join(f"  - {k}: {v:.4g}" for k, v in assessment.components.items())
+    scenario_lines = "\n".join(
+        f"  - {s.name}: p={s.probability:.2f}, total return {s.total_return:+.1%}"
+        for s in assessment.scenarios
+    )
+    parts.append(
+        "## Quantitative Return Assessment (engine-generated)\n\n"
+        f"- Track: {assessment.track}  |  horizon: {assessment.horizon_years:g} years\n"
+        f"- Expected CAGR: {assessment.net_cagr:.1%} post-tax ({assessment.gross_cagr:.1%} gross)\n"
+        f"- Evidence confidence: {assessment.confidence:.0%}\n"
+        f"- Formula: {assessment.spec_version} ({assessment.spec_fingerprint})\n"
+        f"- Hard gates passed: {', '.join(assessment.gates_passed) or '(none recorded)'}\n"
+        + (f"- Asymmetry ratio: {assessment.asymmetry_ratio:.2f}\n" if assessment.asymmetry_ratio is not None else "")
+        + (f"- Scenarios:\n{scenario_lines}\n" if scenario_lines else "")
+        + f"- Components:\n{component_lines}\n"
+        + (
+            f"- Unresolved before purchase: {', '.join(assessment.pending_verification)}\n"
+            if assessment.pending_verification
+            else "- Unresolved before purchase: (nothing outstanding)\n"
+        )
+    )
+
     parts.append(_render_section(2, dossier.business_five_sentences))
     parts.append(_render_section(3, dossier.why_now))
     parts.append(_render_section(4, dossier.three_things_must_be_true))

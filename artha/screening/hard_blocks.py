@@ -86,22 +86,8 @@ def fatal_flaw_checklist(record: CompanyRecord) -> ScreenResult:
     """
     criteria: list[Criterion] = [promoter_pledging_check(record)]
 
-    ocf_pat = record.get_float("ocf_to_pat")
-    if ocf_pat is None:
-        criteria.append(Criterion("profit_becomes_cash", Outcome.NEEDS_STAGE_1B, "ocf_to_pat missing — chronic divergence needs multi-year history", ("ocf_to_pat",)))
-    else:
-        # A single-year ratio is only a proxy for "chronic" divergence —
-        # the true chronic test is a Stage 1b multi-year comparison.
-        criteria.append(
-            Criterion(
-                "profit_becomes_cash",
-                Outcome.PASS if ocf_pat >= 0.8 else Outcome.FAIL,
-                f"ocf_to_pat={ocf_pat} (single-year proxy; chronic divergence is a Stage 1b test)",
-                ("ocf_to_pat",),
-            )
-        )
-
     for name, detail in (
+        ("profit_becomes_cash", "OCF/PAT is not exportable from Screener — filing-review item"),
         ("survives_worst_year_without_dilution", "bear-case stress scenario — qualitative Stage 3 judgment"),
         ("no_single_point_of_failure_dependency", "single customer/regulator/input concentration — filing-review item"),
         ("business_explainable_in_five_sentences", "circle-of-competence test — Stage 3 understandability gate (plan.md §5.5)"),

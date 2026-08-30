@@ -40,15 +40,14 @@ enterprise_value = "EV"
 promoter_holding_pct = "Promoter Holding"
 promoter_pledge_pct = "Pledged %"
 promoter_holding_trend_3y = "Promoter Change 3Y"
-ocf_to_pat = "OCF/PAT"
 """
 
 CSV_HEADER = (
     "Name,Market Capitalization,Current price,ROCE,ROE,D/E,OPM,Sales Growth 3Y,Profit Growth 3Y,"
-    "Profit Growth 5Y,PE,EBIT,NWC,Net Block,EV,Promoter Holding,Pledged %,Promoter Change 3Y,OCF/PAT"
+    "Profit Growth 5Y,PE,EBIT,NWC,Net Block,EV,Promoter Holding,Pledged %,Promoter Change 3Y"
 )
-GOOD_ROW = "Alpha Ltd,1000,50,22,20,0.4,18,15,18,18,15,100,200,200,900,55,0,1.0,0.9"
-BAD_ROW = "Beta Ltd,900,40,20,18,0.5,15,10,12,12,20,60,150,150,700,45,35,0.5,0.7"
+GOOD_ROW = "Alpha Ltd,1000,50,22,20,0.4,18,15,18,18,15,100,200,200,900,55,0,1.0"
+BAD_ROW = "Beta Ltd,900,40,20,18,0.5,15,10,12,12,20,60,150,150,700,45,35,0.5"
 
 
 def _setup(tmp_path):

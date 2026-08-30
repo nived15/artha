@@ -7,7 +7,6 @@ PASSING_TRACK_A_FIELDS = {
     "roe": 20,
     "roce": 22,
     "debt_to_equity": 0.4,
-    "ocf_to_pat": 0.9,
     "promoter_holding_pct": 55,
     "promoter_holding_trend_3y": 1.0,
     "profit_growth_5y": 18,

@@ -15,6 +15,8 @@ from artha.dossier.schema import (
     MoatUnderstandabilityGate,
     Provenance,
     QGLPScorecard,
+    ReturnAssessment,
+    ScenarioLine,
 )
 
 _CITATION = Citation("ANNUAL_REPORT_2024", 12, "MD&A")
@@ -22,6 +24,31 @@ _CITATION = Citation("ANNUAL_REPORT_2024", 12, "MD&A")
 
 def _section(title: str, *, cited: bool = True) -> DossierSection:
     return DossierSection(title=title, content=f"Evidence for {title}.", citations=(_CITATION,) if cited else ())
+
+
+def make_return_assessment(track: str = "A") -> ReturnAssessment:
+    scenarios = (
+        (
+            ScenarioLine("bear", 0.30, -0.475),
+            ScenarioLine("base", 0.45, 0.35),
+            ScenarioLine("bull", 0.25, 1.94),
+        )
+        if track == "B"
+        else ()
+    )
+    return ReturnAssessment(
+        track=track,
+        horizon_years=5.0 if track == "A" else 3.0,
+        gross_cagr=0.1932,
+        net_cagr=0.1752,
+        confidence=0.85,
+        components={"growth": 0.1269, "carry": 0.01, "rerating": 0.06},
+        spec_version="v1",
+        spec_fingerprint="d8cdfd22fafd5f3b",
+        scenarios=scenarios,
+        asymmetry_ratio=4.08 if track == "B" else None,
+        gates_passed=("liquidity", "promoter_pledge", "promoter_holding", "solvency"),
+    )
 
 
 def make_valid_dossier(track: str = "A") -> Dossier:
@@ -69,6 +96,7 @@ def make_valid_dossier(track: str = "A") -> Dossier:
             documents_read=("ANNUAL_REPORT_2024",),
             could_not_verify=(),
         ),
+        return_assessment=make_return_assessment(track),
         moat_understandability_gate=MoatUnderstandabilityGate(
             passed=True,
             moat_type="brand",
@@ -139,6 +167,7 @@ def dossier_to_dict(dossier: Dossier) -> dict:
         "holding_period_and_tax": section(dossier.holding_period_and_tax),
         "disconfirming_evidence": section(dossier.disconfirming_evidence),
         "provenance": dataclasses.asdict(dossier.provenance),
+        "return_assessment": dataclasses.asdict(dossier.return_assessment),
         "moat_understandability_gate": dataclasses.asdict(dossier.moat_understandability_gate),
         "qglp_scorecard": dataclasses.asdict(dossier.qglp_scorecard),
         "margin_of_safety_scuttlebutt": section(dossier.margin_of_safety_scuttlebutt),

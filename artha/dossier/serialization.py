@@ -19,6 +19,8 @@ from artha.dossier.schema import (
     MoatUnderstandabilityGate,
     Provenance,
     QGLPScorecard,
+    ReturnAssessment,
+    ScenarioLine,
 )
 
 
@@ -42,6 +44,27 @@ def _section_from_dict(data: dict) -> DossierSection:
 
 def _optional_section_from_dict(data: dict | None) -> DossierSection | None:
     return _section_from_dict(data) if data is not None else None
+
+
+def _return_assessment_from_dict(raw: dict) -> ReturnAssessment:
+    return ReturnAssessment(
+        track=raw["track"],
+        horizon_years=float(raw["horizon_years"]),
+        gross_cagr=float(raw["gross_cagr"]),
+        net_cagr=float(raw["net_cagr"]),
+        confidence=float(raw["confidence"]),
+        components={k: float(v) for k, v in raw.get("components", {}).items()},
+        spec_version=raw.get("spec_version", ""),
+        spec_fingerprint=raw.get("spec_fingerprint", ""),
+        scenarios=tuple(
+            ScenarioLine(s["name"], float(s["probability"]), float(s["total_return"]))
+            for s in raw.get("scenarios", ())
+        ),
+        asymmetry_ratio=None if raw.get("asymmetry_ratio") is None else float(raw["asymmetry_ratio"]),
+        gates_passed=tuple(raw.get("gates_passed", ())),
+        gates_failed=tuple(raw.get("gates_failed", ())),
+        pending_verification=tuple(raw.get("pending_verification", ())),
+    )
 
 
 def dossier_from_dict(data: dict[str, Any]) -> Dossier:
@@ -119,6 +142,7 @@ def dossier_from_dict(data: dict[str, Any]) -> Dossier:
             holding_period_and_tax=_section_from_dict(data["holding_period_and_tax"]),
             disconfirming_evidence=_section_from_dict(data["disconfirming_evidence"]),
             provenance=provenance,
+            return_assessment=_return_assessment_from_dict(data["return_assessment"]),
             moat_understandability_gate=moat_gate,
             qglp_scorecard=qglp,
             margin_of_safety_scuttlebutt=_section_from_dict(data["margin_of_safety_scuttlebutt"]),
@@ -131,4 +155,9 @@ def dossier_from_dict(data: dict[str, Any]) -> Dossier:
             canslim_notes=_optional_section_from_dict(data.get("canslim_notes")),
         )
     except KeyError as exc:
+        if str(exc).strip("'") == "return_assessment":
+            raise DossierSchemaError(
+                "dossier draft missing 'return_assessment' — this section is injected from a "
+                "ranking run via artha.dossier.quant.return_assessment_from_candidate, not authored"
+            ) from exc
         raise DossierSchemaError(f"dossier draft missing required key: {exc}") from exc

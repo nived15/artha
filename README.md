@@ -2,299 +2,322 @@
 
 Wealth pursued through sound, disciplined means.
 
-See [`plan.md`](plan.md) for the full specification and
-[`implementation_plan.md`](implementation_plan.md) for the build sequence and
-architecture. This README covers Phases 0-4.
+Artha is a local, single-user research and execution pipeline for Indian
+equities. It turns a Screener.in CSV export into a ranked, rule-attributed
+shortlist, drives an evidence-cited deep-dive dossier per candidate, and keeps
+a post-tax paper ledger scored against a benchmark you froze before you
+started.
 
-## Phase 0 — foundations
+Everything runs on your machine. There is no server, no account, and no network
+dependency except the exports and filings you feed it yourself. State lives in
+one SQLite file plus a directory of markdown dossiers.
 
-What exists so far: repo skeleton, config schema/loader, SQLite schema +
-migrations, an append-only tamper-evident journal, an OS-keyring secrets
-wrapper, and the `artha` CLI shell (`artha --version`, `artha init`,
-`artha config show`, `artha secrets ...`). Screening, dossiers, the ledger,
-monitoring, and execution are later phases — the corresponding CLI
-subcommands (`research`, `review`, `order`) are present as documented
-stubs that refuse to run until their phase lands.
+The full specification is [`plan.md`](plan.md); the build sequence and
+architecture are in [`implementation_plan.md`](implementation_plan.md). This
+README is the operating manual.
 
-## Phase 1 — data spine
+---
 
-Content-addressable snapshot store for Screener.in CSV exports, the §13.4
-validation-spike checks, a staleness guard (§13.6), and a citation-preserving
-(doc_id, page, text) chunk store for filings. See
-[`docs/phase1_validation_spike.md`](docs/phase1_validation_spike.md) for the
-desk-research results — the empirical parts of the spike (smallcap
-completeness, full column-ceiling/sector-field confirmation) require an
-actual Screener Premium export, which only you can produce.
+## What it does
 
-```powershell
-# Fill in real Screener column names once you have an export (desk-research
-# starting point in config/screener_field_map.example.toml):
-Copy-Item config\screener_field_map.example.toml config\screener_field_map.toml
-
-# Ingest a real export and run the §13.4 spike checks against it:
-.venv\Scripts\artha data import-screener path\to\export.csv --source screener_profile1 --profile profile_1_standard
-
-.venv\Scripts\artha data show-snapshot <snapshot_id>
-.venv\Scripts\artha data check-staleness <snapshot_id>
-
-# Filings: citation-preserving chunk store
-.venv\Scripts\artha data import-filing path\to\filing.txt --doc-id ALPHA_Q1FY25 --ticker ALPHA
-.venv\Scripts\artha data show-chunk ALPHA_Q1FY25 1
+```text
+Screener CSV ──► artha data import-screener ──► immutable, hashed snapshot
+                                                        │
+                        ┌───────────────────────────────┴──────────────┐
+                        ▼                                              ▼
+              artha rank (engine)                            artha screen (v1)
+       expected post-tax CAGR, ranked                 pass/fail Stage 1+2 rules
+                        │
+                        ▼
+      artha research <ticker> ──► 24-section dossier, every claim cited
+                        │
+                        ▼
+      artha ledger buy/sell ──► FIFO tax lots, post-tax scorecard vs benchmark
 ```
 
-## Phase 2 — screening + hard blocks
+Four ideas the design is built around:
 
-Deterministic Track A/B Stage 1 screens (Agrawal QGLP, Buffett & Munger/
-Terry Smith moat refinement, Graham defensive criteria, Lynch PEG, Davis
-Double Play, Kedia SMILE, O'Neil CANSLIM overlay) and Stage 2 fatal-flaw
-hard blocks (promoter pledging/integrity, the Greenblatt Magic Formula
-ranking gate, the Pabrai asymmetry gate). Every exclusion is attributed to
-the exact rule that fired; every gap in Stage 1a data is reported as
-"pending" rather than silently assumed.
+**Never silently guess.** Every candidate lands in exactly one of three
+buckets — ranked, rejected by a named rule, or blocked by missing data. A
+zero-length shortlist always tells you which of the two it was. Missing data is
+never treated as a pass or a fail.
 
-**Scope boundary, per plan.md §13's own Stage 1a/1b split:** only checks
-computable from a single snapshot row are automated here. Checks the plan
-itself assigns to Stage 1b (multi-year own-history: sustained 10-year
-ROE/ROIC, 10-year earnings-deficit/dividend record, Davis's own-5-year P/E
-tercile) or Stage 3 (qualitative LLM judgment: scuttlebutt, business
-explainability, promoter aspiration) are reported as `needs_stage_1b` /
-`needs_stage_3`, never guessed at.
+**Reproducible by construction.** Snapshots are content-addressed and hashed.
+Every coefficient the ranking engine uses lives in
+[`config/formula.toml`](config/formula.toml), and every run records that file's
+sha256 fingerprint. A ranking from six months ago can be re-derived exactly.
 
-```powershell
-.venv\Scripts\artha screen --source screener_profile1 --track A
-.venv\Scripts\artha screen --source screener_profile1 --track B
-```
+**Cite or it didn't happen.** Dossiers are rejected, not warned about, when a
+claim has no `(doc_id, page)` citation into an ingested filing. The LLM agents
+that write them can only read from a four-tool, read-only surface.
 
-## Phase 2.5 — dossier schema + validator
+**Post-tax or it's fiction.** Returns are taxed at the terminal gain and
+re-annualised (STCG 20% held ≤12 months, LTCG 12.5% beyond, ₹1.25L annual
+exemption). The scorecard compares post-tax, money-weighted returns to the two
+components of your frozen benchmark, judged independently.
 
-The 24-section dossier data model (`artha/dossier/schema.py`), a
-completeness + citation-presence validator that rejects rather than warns
-(`artha/dossier/validator.py`), a markdown renderer matching plan.md §6's
-section layout, and storage that writes the immutable markdown artifact
-to `dossiers/<ticker>/<run_id>.md` plus a queryable SQLite index row
-(implementation_plan.md §16 Q1). This is a library only — no LLM
-dependency, no CLI wiring yet. Phase 3a's agent harness and Phase 3's
-factory will be the first callers, writing into this exact contract:
+---
 
-```python
-from artha.dossier.storage import write_dossier
-from artha.dossier.validator import validate_dossier
-
-result = write_dossier(conn, dossier, run_id="run-001")
-result.validation.passed   # False rejects, listing every defect by section
-```
-
-Sections 12 (disconfirming evidence) and 14 (provenance) are checked as
-the plan's own "anti-self-deception mechanism"; the two gate sections (15
-moat/understandability, 18 integrity) are checked as gates, not just
-evidence — a `passed=False` gate is itself a validation error, distinct
-from a missing/incomplete section. Track-conditional sections (19 Davis,
-22 Terry Smith, 24 CANSLIM) are typed `X | None` so "not applicable to
-this track" and "applicable but missing" are never conflated.
-
-## Phase 3a — agent harness (extension, agents, skills, factory)
-
-The Copilot-facing machinery that will generate real dossiers in Phase 3:
-
-- **`.github/extensions/artha-tools/`** — a project extension exposing four
-  read-only tools (`get_filing_chunk`, `get_candidate`,
-  `list_candidate_chunks`, `validate_dossier`) that shell out to new
-  `artha agent-tools ...` CLI commands (JSON in/out). No write/order tools
-  live here — the factory's own write step is server-side orchestration
-  code, never an agent-callable tool.
-- **`.github/agents/`** — one custom agent per dossier framework section
-  (§15 moat/understandability gate through §24 CANSLIM), plus a citation
-  verifier (adversarial re-check of every cited claim) and a
-  narrative/assembly agent (§1-14 + final JSON merge). Each is restricted
-  to the four read-only tools above and instructed to cite every claim.
-- **`.github/skills/`** — reusable, versioned procedures the agents share:
-  citation discipline, the ROIIC calculation, the QGLP 0-3 scoring rubric,
-  the 7-gate understandability checklist, and the exact dossier JSON
-  schema `validate_dossier` expects.
-- **The `artha-dossier` factory** (registered by the extension via
-  `defineFactory`) — `args: {ticker, snapshot_id, track}`, fans out one
-  subagent per framework section, runs the adversarial citation-verify
-  pass, then assembles. Limits match `BudgetConfig`'s defaults
-  (`maxConcurrentSubagents: 5`, `maxTotalSubagents: 20`, `maxAiCredits: 5`,
-  `timeoutSeconds: 3600`).
-
-```powershell
-# The read-only tool surface, callable directly for testing:
-.venv\Scripts\artha agent-tools get-candidate ALPHA --snapshot-id <id>
-.venv\Scripts\artha agent-tools get-filing-chunk ALPHA_Q1FY25 1
-.venv\Scripts\artha agent-tools list-candidate-chunks ALPHA --topic pledge
-echo '{"identity": {...}, ...}' | .venv\Scripts\artha agent-tools validate-dossier
-echo '{"identity": {...}, ...}' | .venv\Scripts\artha agent-tools write-dossier --run-id run-001
-```
-
-**Scope boundary:** Phase 3a builds and verifies the harness — the
-extension loads, all four tools work end-to-end (verified against the
-running Copilot session, not just pytest), and the factory registers with
-the correct argument schema and limits. It deliberately does **not** run a
-real dossier generation end to end — that is Phase 3's exit criterion
-("20+ dossiers that pass their own completeness checks"), and running the
-full fan-out for real spends real AI credits across ~12 subagent calls per
-dossier, which belongs to a phase whose job is producing real dossiers, not
-building the plumbing.
-
-## Phase 4 — paper ledger + scorecard
-
-A FIFO tax-lot engine (`artha/ledger/tax_lots.py`), post-July-2024 Indian
-capital-gains tax (`artha/ledger/tax.py`: STCG 20% held ≤12 months, LTCG
-12.5% held longer, ₹1.25L annual LTCG exemption, standard loss set-off
-rules), position aggregation with an accrued-tax-on-unrealized-gains
-estimate (`artha/ledger/positions.py`), and the per-track, post-tax,
-money-weighted scorecard against the frozen benchmark's two components,
-judged independently (`artha/ledger/scorecard.py`) — plan.md §9 and §11.
-
-**Sell discipline is enforced, not just documented:** `artha ledger sell`
-refuses to touch any tax lot held under 12 months unless you pass
-`--override-reason`, matching config/ips.md §5's own rule literally rather
-than trusting you to remember it.
-
-```powershell
-.venv\Scripts\artha ledger buy ALPHA --track A --quantity 100 --price 500 --trade-date 2025-01-15
-.venv\Scripts\artha ledger sell ALPHA --quantity 40 --price 650 --trade-date 2026-03-01
-.venv\Scripts\artha ledger positions --track A
-
-# Frozen-benchmark NAV history, one point at a time (fund names must match
-# config/artha.toml's [benchmark] exactly):
-.venv\Scripts\artha ledger import-benchmark-nav --fund-name "<index fund>" --nav-date 2025-01-15 --nav 250.0
-.venv\Scripts\artha ledger import-benchmark-nav --fund-name "<index fund>" --nav-date 2026-03-01 --nav 275.0
-
-.venv\Scripts\artha ledger scorecard --track A --as-of-date 2026-03-01 --price ALPHA=650
-```
-
-**Honest simplifications, carried forward from `artha/ledger/scorecard.py`'s
-own docstring:** `time_weighted_return` needs periodic valuation marks
-supplied by the caller (there's no live price feed to derive them from
-automatically) — expose it as a reusable function, don't try to auto-derive
-it from trades alone. Post-tax XIRR applies each fiscal year's realized
-capital-gains tax as one lump-sum outflow at the valuation date rather than
-modeling the exact ITR payment date. Loss carry-forward across fiscal years
-is not modeled yet — revisit if the paper record shows it matters.
-
-### Setup
+## Install
 
 ```powershell
 python -m venv .venv
 .venv\Scripts\pip install -e ".[dev]"
 
-# Copy the config templates and fill in your real values (gitignored):
+# Config templates — the copies are gitignored, fill in your real values:
 Copy-Item config\artha.example.toml config\artha.toml
 Copy-Item config\screener_field_map.example.toml config\screener_field_map.toml
-
-# Write and freeze your IPS from the template before funding anything:
 Copy-Item config\ips.template.md config\ips.md
 
 .venv\Scripts\artha --version
-.venv\Scripts\artha init            # creates .artha/artha.db and applies migrations
-.venv\Scripts\artha config show     # prints the resolved, validated config
+.venv\Scripts\artha init          # creates .artha/artha.db, applies migrations
+.venv\Scripts\artha config show   # prints the resolved, validated config
 ```
 
-### Tests
+Requires Python ≥3.11. Runtime dependencies are `click` and `keyring` only —
+all numerics are stdlib.
+
+Write and freeze your IPS (`config/ips.md`) and your benchmark
+(`config/artha.toml`'s `[benchmark]`) **before** funding anything. The sell
+discipline and the scorecard both read from them, and freezing after the fact
+defeats the purpose.
+
+---
+
+## The commands
+
+All examples below assume `.venv\Scripts\` is on your path; if not, prefix them
+with it.
+
+### `artha init` / `artha config show`
+
+Bootstrap the database and print the resolved config. `init` is idempotent and
+safe to re-run — it applies any pending schema migrations.
+
+### `artha data ...` — the data spine
+
+```powershell
+# Ingest a Screener export; runs the plan.md §13.4 validation-spike checks
+artha data import-screener screener_exports\my-export.csv `
+    --source screener_profile1 --profile profile_1_standard
+
+artha data show-snapshot <snapshot_id>      # metadata + per-field completeness
+artha data check-staleness <snapshot_id>    # §13.6 staleness guard
+
+# Filings: the citation-preserving chunk store dossiers cite into
+artha data import-filing filings\alpha_q1fy25.txt --doc-id ALPHA_Q1FY25 --ticker ALPHA
+artha data show-chunk ALPHA_Q1FY25 1        # print one (doc_id, page) chunk
+```
+
+`--source` is a label you choose and reuse; `screen` and `rank` resolve the
+latest snapshot for that label. `--profile` selects the §5.3a arithmetic
+profile — `profile_1_standard` for operating companies, `profile_2_banking` for
+lenders, where ratios like EV/EBIT are meaningless.
+
+Column names differ between Screener exports. Map yours in
+`config/screener_field_map.toml`; unmapped fields report as missing rather than
+being guessed at.
+
+### `artha rank` — the ranking engine
+
+Ranks a snapshot by expected post-tax CAGR. This is the primary path.
+
+```powershell
+artha rank --source screener_profile1 --track A --top 25
+artha rank --source screener_profile1 --track A --explain   # + feature coverage
+artha rank --source screener_profile2_financial_services --profile profile_2_banking --track B
+```
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| `--source` | *required* | Snapshot source label from `import-screener` |
+| `--track` | *required* | `A` (compounders, 5y) or `B` (asymmetry, 3y) |
+| `--profile` | `profile_1_standard` | §5.3a arithmetic profile |
+| `--formula` | `config/formula.toml` | Coefficient spec to run under |
+| `--top` | `25` | How many ranked names to print |
+| `--explain` | off | Print feature coverage across the universe |
+
+Output is a header with the four bucket counts, the formula version and
+fingerprint, the ranked names, then a tally of rejections by rule and of what
+blocked the rest:
+
+```text
+universe: 1104  ranked: 727  rejected: 209  insufficient data: 168
+formula: v1 (b217b85e0199e3cf)  snapshot: 3f2a91c0de44
+
+top 25 by expected post-tax CAGR weighted by evidence confidence:
+    1. EXAMPLE LTD                  net   31.4%  gross   35.9%  confidence   82%
+```
+
+Names are sorted by `net_cagr × confidence`, so a thinly-evidenced 40% ranks
+below a well-evidenced 30%. A `*` marks a name carrying an unresolved Stage 1b
+check — it is ranked, but not buyable until that is answered.
+
+Change any number in `config/formula.toml` and the fingerprint changes. That is
+deliberate: no ranking can be quietly re-attributed to different coefficients
+after the fact.
+
+### `artha screen` — the v1 rule screen
+
+The original pass/fail Stage 1+2 pipeline (Agrawal QGLP, Graham defensive,
+Buffett-Munger/Terry Smith moat refinement, Lynch PEG, Davis, Kedia SMILE,
+O'Neil CANSLIM, plus the Greenblatt Magic Formula and Pabrai asymmetry hard
+blocks). It runs alongside `rank` and attributes every exclusion to the exact
+rule that fired.
+
+```powershell
+artha screen --source screener_profile1 --track A
+```
+
+Use `rank` to decide what to research, and `screen` to ask "which specific
+rules would this name have failed."
+
+Checks the plan itself assigns to Stage 1b (multi-year own-history: sustained
+10-year ROE/ROIC, the 10-year earnings-deficit record, Davis's own-5-year P/E
+tercile) or Stage 3 (qualitative judgment: scuttlebutt, business
+explainability, promoter aspiration) are reported as `needs_stage_1b` /
+`needs_stage_3`, never guessed at.
+
+### `artha research <ticker>` — dossier generation
+
+Fans out one subagent per dossier framework section, runs an adversarial
+citation-verification pass, then assembles and validates against the 24-section
+schema. **Phase 3 — the harness is built and verified, but the end-to-end run
+is not yet wired to this command, which currently refuses to run.** Today you
+drive the factory through Copilot, or call the tool surface directly:
+
+```powershell
+artha agent-tools get-candidate ALPHA --source screener_profile1
+artha agent-tools get-filing-chunk ALPHA_Q1FY25 1
+artha agent-tools list-candidate-chunks ALPHA --topic pledge
+Get-Content draft.json | artha agent-tools validate-dossier
+Get-Content draft.json | artha agent-tools write-dossier --run-id run-001
+```
+
+The first four are read-only and are exactly what the agents can call. The
+write step is orchestration code, never an agent-callable tool.
+
+The validator rejects rather than warns: a missing section, empty disconfirming
+evidence, empty provenance, an uncited evidence claim, a failed gate, or a
+track-conditional section in the wrong state all fail the write.
+
+### `artha ledger ...` — positions, tax, scorecard
+
+```powershell
+artha ledger buy ALPHA --track A --quantity 100 --price 500 --trade-date 2025-01-15
+artha ledger sell ALPHA --quantity 40 --price 650 --trade-date 2026-03-01
+artha ledger positions --track A
+
+# Frozen-benchmark NAV, one point at a time. Fund names must match
+# config/artha.toml's [benchmark] exactly.
+artha ledger import-benchmark-nav --fund-name "<index fund>" --nav-date 2026-03-01 --nav 275.0
+
+artha ledger scorecard --track A --as-of-date 2026-03-01 --price ALPHA=650
+```
+
+`--price TICKER=PRICE` is repeatable and supplies the current mark for each
+open position; there is no live price feed.
+
+Selling a tax lot held under 12 months raises `SellDisciplineError` unless you
+pass `--override-reason`. That is `config/ips.md` §5 enforced in code rather
+than left to your memory at the moment it is least reliable.
+
+### `artha secrets ...`
+
+```powershell
+artha secrets set kite_api_key      # prompts, writes to the OS keyring
+artha secrets get kite_api_key      # reports set / not-set, never the value
+artha secrets delete kite_api_key
+```
+
+Credentials go in the OS keyring. Never in the repo, never in an env file.
+
+### `artha review` / `artha order`
+
+Documented stubs that refuse to run — Gate 1 thesis approval and Phase 6 Kite
+execution.
+
+---
+
+## Where outputs go
+
+| What | Where | Committed? |
+| --- | --- | --- |
+| Database — snapshots, filings, tax lots, journal, dossier index | `.artha/artha.db` | No, gitignored |
+| Rendered dossiers | `dossiers/<ticker>/<run_id>.md` | Immutable; a new run needs a new `run_id` |
+| Screener exports you ingest | `screener_exports/` | Your call |
+| Resolved config | `config/artha.toml`, `config/screener_field_map.toml` | No, gitignored — the `.example` files are committed |
+| Frozen IPS | `config/ips.md` | No, gitignored — `ips.template.md` is committed |
+| Formula coefficients | `config/formula.toml` | **Yes** — fingerprinted into every run |
+| `rank` / `screen` results | stdout, plus a journal row in the database | — |
+
+Snapshot CSV bytes are stored content-addressed, so the same export ingested
+twice is stored once, and a run always reproduces from the exact bytes it saw.
+
+**The journal.** Every `screen` run, `rank` run, ledger trade, and dossier write
+appends a hash-chained entry. Each row hashes the previous row's hash, so
+retroactively editing history breaks the chain verifiably. Read it via
+`artha.journal.Journal(conn).all_entries()`; check integrity with
+`verify_chain()`.
+
+**Dossiers are immutable.** `write_dossier` refuses to overwrite an existing
+`<run_id>.md`. Regenerate under a new run id; the old one stays as the record
+of what you actually believed at the time.
+
+---
+
+## Reading `rank` output honestly
+
+Standing caveats, kept here rather than buried:
+
+- **The ordering is meaningful; the magnitudes are not calibrated.** Top names
+  sit near the model's term bounds, growth leans on 3-year figures that can
+  reflect recovery from a low base, and the default probability model in
+  `config/formula.toml` is uncalibrated. Treat the output as "research these
+  first," not "expect 31%."
+- **Cash conversion is not screened.** Screener cannot export OCF/PAT and it is
+  not reconstructable from what it does export, so the field was removed
+  entirely rather than faked. Verifying that reported profit becomes cash is a
+  Stage 3 filing-review item, read from the cash flow statement and cited.
+- **Lender quality is thin.** For `profile_2_banking`, valuation correctly
+  substitutes earnings yield (PAT/MarketCap) for EV/EBIT, but the quality score
+  still leans on ratios that mean less for a bank. ROA, NIM, GNPA, and CAR are
+  absent from Screener exports. Treat banking rankings as indicative.
+- **`--explain` is the honest first stop.** If a bucket looks wrong, feature
+  coverage usually explains it before the formula does.
+
+---
+
+## Tests
 
 ```powershell
 .venv\Scripts\pytest -q
 ```
 
-### Phase 0 exit criteria (plan.md §11)
+283 tests. The tax, scorecard, and tax-lot suites include hand-computed
+reconciliation tests, so if the arithmetic drifts those fail rather than the
+numbers quietly changing.
 
-- [x] IPS written and frozen (`config/ips.md`, frozen 2026-08-29)
-- [x] Benchmark frozen and recorded (`config/artha.toml`'s `[benchmark]` section:
-      70% UTI Nifty 50 Index Fund / 30% Motilal Oswal Nifty 200 Momentum 30
-      Index Fund, frozen 2026-08-29)
-- [x] Passive core and ballast funded (2026-08-29, per `config/ips.md` §2 —
-      manual brokerage action, outside this repo)
-- [x] Repo skeleton, SQLite schema, config, secrets in keyring
-- [x] `artha --version` runs
+---
 
-### Phase 1 exit criteria (plan.md §11)
+## Build status
 
-- [x] Content-addressable, hashed snapshot store; a screen run reproduces
-      exactly from a stored snapshot
-- [x] Staleness guard refuses to build on a snapshot older than
-      `data.snapshot_max_age_days`
-- [x] Citation-preserving (doc_id, page, chunk_index) filing chunk store
-- [x] §13.4 desk-research recorded (`docs/phase1_validation_spike.md`)
-- [x] §13.4 empirical checks — confirmed 2026-08-30 against real Screener
-      Premium exports (`screener_exports/artha-profile-1-validation.csv`,
-      1104 smallcap rows, `screener_exports/financial-services.csv`, 654
-      rows). Column ceiling, shareholding fields, and smallcap completeness
-      all pass for Profile 1; banking/insurance sector fields confirmed
-      absent, moving Profiles 2/3 to Stage 1b. See
-      `docs/phase1_validation_spike.md`.
+| Phase | State |
+| --- | --- |
+| 0 — foundations: config, DB, journal, keyring, CLI | Complete |
+| 1 — data spine: snapshots, staleness guard, filing chunks | Complete |
+| 2 — screening + hard blocks, and the `rank` engine rebuild | Complete |
+| 2.5 — dossier schema, validator, renderer, storage | Complete |
+| 3a — agent harness: extension, agents, skills, factory | Complete |
+| 3 — real dossiers generated end to end | Not started |
+| 4 — paper ledger + scorecard | Built; ongoing data entry |
+| 5-6 — monitoring, Kite execution | Not started |
 
-### Phase 2 exit criteria (plan.md §11)
+Open engine work: making `quality_score` profile-aware for lenders, and
+calibrating the formula coefficients against point-in-time history — the
+walk-forward harness in `artha/backtest/` is built and waiting on data.
 
-- [x] Both track screens (QGLP, Graham, Terry Smith/Buffett-Munger moat
-      refinement, Davis, Lynch PEG, Kedia SMILE, O'Neil CANSLIM) and the
-      Greenblatt/Pabrai hard blocks implemented, deterministic, unit-tested
-- [x] `artha screen` produces a ranked shortlist per track, with every
-      exclusion attributed to the exact rule that fired — verified against
-      the real 1104-row Profile 1 snapshot above (Track A: 0 shortlisted,
-      909 excluded, 195 pending Stage 1b data; Track B: 0 shortlisted, 1104
-      excluded by the Greenblatt/Pabrai hard blocks)
-- [ ] Fill in the remaining `config/screener_field_map.toml` Phase 2 fields
-      (`ocf_to_pat`, `profit_growth_5y`, etc.) against a real export so the
-      screens run on complete data rather than reporting "pending" — not
-      part of §13.4's required-field set, and the current real exports
-      don't include these columns yet
-
-### Phase 2.5 exit criteria (implementation_plan.md §3)
-
-- [x] Dossier schema covers all 24 mandatory sections plus the two gates
-- [x] Validator rejects (never warns) on missing sections, empty
-      disconfirming-evidence/provenance, missing citations on evidence
-      sections, a failed gate, or a track-conditional section in the
-      wrong state
-- [x] Storage writes the immutable markdown file + SQLite index row,
-      matching implementation_plan.md §16 Q1's "both" resolution
-- [ ] First real dossier generated end-to-end (Phase 3 — needs Phase 3a's
-      agent harness)
-
-### Phase 3a exit criteria (implementation_plan.md §3-§4)
-
-- [x] Project extension exposes the read-only tool surface
-      (`get_filing_chunk`, `get_candidate`, `list_candidate_chunks`,
-      `validate_dossier`); verified loading cleanly and each tool working
-      end-to-end against real ingested test data
-- [x] One custom agent per framework section (§15-24) plus a citation
-      verifier and a narrative/assembly agent, each restricted to the
-      read-only tool surface
-- [x] Skills for the shared, reusable procedures (citation discipline,
-      ROIIC, QGLP rubric, understandability checklist, dossier JSON schema)
-- [x] `artha-dossier` factory registered with a declared `argsSchema` and
-      limits matching `BudgetConfig`'s defaults; verified via
-      `factories_manage inspect`
-- [ ] Full end-to-end dossier generation (Phase 3 — this phase builds the
-      harness, Phase 3 runs it for real candidates)
-
-### Phase 4 exit criteria (plan.md §11)
-
-- [x] Paper positions (`artha/ledger/positions.py`), FIFO tax lots
-      (`artha/ledger/tax_lots.py`), and time/money-weighted post-tax
-      performance vs. the frozen benchmark, per track
-      (`artha/ledger/scorecard.py`)
-- [x] Sell discipline enforced: selling a lot held <12 months raises
-      `SellDisciplineError` unless `--override-reason` is given
-      (config/ips.md §5)
-- [x] **Gets real tests**: `tests/test_tax_lots.py`, `test_tax.py`,
-      `test_positions.py`, `test_scorecard.py` — 39 tests total
-- [x] Scorecard reconciles against a hand-computed example
-      (`test_xirr_single_buy_single_sale_reconciles_by_hand`,
-      `test_time_weighted_return_reconciles_by_hand`,
-      `test_track_scorecard_reconciles_by_hand`)
-- [ ] Real trades entered as they happen (`artha ledger buy`/`sell`) and
-      benchmark NAV tracked over time (`artha ledger import-benchmark-nav`)
-      — this is ongoing, human-driven data entry, not a one-time build step
-
-### Credentials
-
-Never put credentials in the repo or in env files. Store them in the OS
-keyring:
-
-```powershell
-.venv\Scripts\artha secrets set kite_api_key
-.venv\Scripts\artha secrets get kite_api_key   # reports set/not-set only
-```
+Detailed per-phase exit criteria live in [`plan.md`](plan.md) §11 and
+[`implementation_plan.md`](implementation_plan.md) §3. Phase 1's empirical
+validation results are recorded in
+[`docs/phase1_validation_spike.md`](docs/phase1_validation_spike.md).

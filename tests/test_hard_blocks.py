@@ -40,7 +40,7 @@ def test_promoter_integrity_red_flags_fails_on_declining_holding():
 
 
 def test_fatal_flaw_checklist_reports_most_items_as_needs_stage_3():
-    result = fatal_flaw_checklist(_record("A", {"promoter_pledge_pct": 0, "ocf_to_pat": 0.9}))
+    result = fatal_flaw_checklist(_record("A", {"promoter_pledge_pct": 0}))
     stage3_items = [c for c in result.criteria if c.outcome == Outcome.NEEDS_STAGE_3]
     assert len(stage3_items) >= 5
 

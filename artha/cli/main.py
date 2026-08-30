@@ -25,6 +25,9 @@ from artha.db import apply_migrations, connect, current_schema_version
 from artha.dossier.serialization import DossierSchemaError, dossier_from_dict
 from artha.dossier.storage import write_dossier
 from artha.dossier.validator import validate_dossier
+from artha.engine.adapters import coverage_report, feature_vectors_from_rows
+from artha.engine.ranking import rank as rank_universe
+from artha.engine.spec import FormulaSpecError, load_formula_spec
 from artha.journal import Journal
 from artha.ledger.positions import list_open_positions
 from artha.ledger.scorecard import (
@@ -40,6 +43,7 @@ from artha.screening.pipeline import screen_track_a, screen_track_b
 from artha.secrets import SecretNotFoundError, delete_secret, has_secret, set_secret
 
 DEFAULT_CONFIG_PATH = "config/artha.toml"
+DEFAULT_FORMULA_PATH = "config/formula.toml"
 DEFAULT_DRY_RUN_SETTING = "dry_run_mode"
 
 
@@ -738,6 +742,132 @@ def screen(source: str, profile: str, track: str, config_path: str) -> None:
         click.echo("pending — insufficient Stage 1a data (not excluded, not shortlisted):")
         for c in pending:
             click.echo(f"  {c.ticker}: missing {list(c.insufficient_data_fields)}")
+
+
+@cli.command()
+@click.option("--source", required=True, help="Snapshot source label, e.g. 'screener_profile1'.")
+@click.option("--profile", default="profile_1_standard", show_default=True)
+@click.option("--track", type=click.Choice(["A", "B"]), required=True)
+@click.option("--formula", "formula_path", default=DEFAULT_FORMULA_PATH, show_default=True)
+@click.option("--top", default=25, show_default=True, help="How many ranked names to print.")
+@click.option("--explain", is_flag=True, help="Show feature coverage across the universe.")
+@click.option("--config", "config_path", default=DEFAULT_CONFIG_PATH, show_default=True)
+def rank(
+    source: str,
+    profile: str,
+    track: str,
+    formula_path: str,
+    top: int,
+    explain: bool,
+    config_path: str,
+) -> None:
+    """Rank a snapshot by expected post-tax return (engine rebuild).
+
+    Runs alongside `artha screen`. Candidates land in exactly one of three
+    buckets: ranked, rejected by a named hard gate, or blocked by missing
+    data — so a zero-length shortlist always says which of the two it was.
+    """
+    app_config = _load_config_or_default(config_path)
+
+    try:
+        spec = load_formula_spec(formula_path)
+    except FormulaSpecError as exc:
+        click.echo(f"formula spec error: {exc}", err=True)
+        sys.exit(1)
+
+    conn = connect(app_config.db_path)
+    try:
+        apply_migrations(conn)
+        record = latest_snapshot(conn, source)
+        if record is None:
+            click.echo(f"no snapshot found for source={source}; run 'artha data import-screener' first.", err=True)
+            sys.exit(1)
+        try:
+            assert_not_stale(record, app_config.data.snapshot_max_age_days)
+        except StaleSnapshotError as exc:
+            click.echo(str(exc), err=True)
+            sys.exit(1)
+
+        rows = load_rows(record)
+        field_map = load_field_map(app_config.data.field_map_path, profile)
+        universe = feature_vectors_from_rows(
+            rows, field_map, profile=profile, as_of=record.captured_at
+        )
+        run = rank_universe(universe, spec, track=track)
+
+        Journal(conn).append(
+            event_type="rank_run",
+            entity_type="snapshot",
+            entity_id=record.snapshot_id,
+            payload={
+                "track": track,
+                "source": source,
+                "profile": profile,
+                "spec_version": run.spec_version,
+                "spec_fingerprint": run.spec_fingerprint,
+                "universe_size": len(universe),
+                "ranked": [
+                    {
+                        "ticker": c.ticker,
+                        "net_cagr": c.net_cagr,
+                        "confidence": c.estimate.confidence,
+                        "pending_verification": list(c.pending_verification),
+                    }
+                    for c in run.ranked[:top]
+                ],
+                "rejected_count": len(run.rejected),
+                "insufficient_count": len(run.insufficient),
+            },
+        )
+    finally:
+        conn.close()
+
+    click.echo(
+        f"universe: {len(universe)}  ranked: {len(run.ranked)}  "
+        f"rejected: {len(run.rejected)}  insufficient data: {len(run.insufficient)}"
+    )
+    click.echo(f"formula: {run.spec_version} ({run.spec_fingerprint})  snapshot: {record.snapshot_id[:12]}")
+
+    if run.ranked:
+        click.echo(
+            f"\ntop {min(top, len(run.ranked))} by expected post-tax CAGR weighted by evidence confidence:"
+        )
+        for position, c in enumerate(run.ranked[:top], start=1):
+            flag = " *" if c.pending_verification else ""
+            click.echo(
+                f"  {position:>3}. {c.ticker:<28} net {c.net_cagr:>7.1%}  "
+                f"gross {c.estimate.gross_cagr:>7.1%}  confidence {c.estimate.confidence:>5.0%}{flag}"
+            )
+        awaiting = sum(1 for c in run.ranked if c.pending_verification)
+        if awaiting:
+            click.echo(
+                f"\n  * {awaiting} of {len(run.ranked)} ranked names carry an unresolved Stage 1b check "
+                "and are not buyable until it is answered."
+            )
+    else:
+        click.echo("\nnothing ranked. the counts above say whether that is rejection or missing data.")
+
+    if run.rejected:
+        click.echo("\nrejections by rule:")
+        for rule, count in _tally(r.reasons[0].split(":")[0] for r in run.rejected if r.reasons):
+            click.echo(f"  {rule}: {count}")
+
+    if run.insufficient:
+        click.echo("\nblocked by missing data:")
+        for reason, count in _tally(r for c in run.insufficient for r in c.reasons):
+            click.echo(f"  {reason}: {count}")
+
+    if explain:
+        click.echo("\nfeature coverage across the universe:")
+        for feature, share in coverage_report(universe).items():
+            click.echo(f"  {feature:<40} {share:>6.1%}")
+
+
+def _tally(items) -> list[tuple[str, int]]:
+    counts: dict[str, int] = {}
+    for item in items:
+        counts[item] = counts.get(item, 0) + 1
+    return sorted(counts.items(), key=lambda kv: -kv[1])
 
 
 @cli.command()
